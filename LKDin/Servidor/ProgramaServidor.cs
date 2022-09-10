@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
@@ -59,13 +60,8 @@ namespace Servidor
                     else
                     {
                         string mensajeCliente = Encoding.UTF8.GetString(data);
-                        Console.WriteLine($"Cliente dice: {mensajeCliente}");
-
-                        if (mensajeCliente == "1")
-                        {
-                            Console.WriteLine($"Opcion elegida por el cliente : {mensajeCliente}");
-                            AltaDeUsuario(socketCliente);
-                        }
+                        Console.WriteLine($"Opcion elegida por el cliente : {mensajeCliente}");
+                        
 
                     }
                 }
@@ -89,6 +85,31 @@ namespace Servidor
             Console.WriteLine($"Cliente dice: {Encoding.UTF8.GetString(data1)}");
             datosServidor.ListaUsuarios.Add(Encoding.UTF8.GetString(data1));
         }
+
+        private static void AltaDePerfilDeTrabajo(Socket socketCliente)
+        {
+            throw new NotImplementedException();
+        }
         
+        private static void AsociarFotoDePerfilATrabajo(Socket socketCliente)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void ConsultarPerfilesExistentes(Socket socketCliente)
+        {
+            throw new NotImplementedException();
+        }
+        
+        private static void ConsultarPerfilEspecifico(Socket socketCliente)
+        {
+            throw new NotImplementedException();
+        }
+        
+        private static void Mensajes(Socket socketCliente)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }
