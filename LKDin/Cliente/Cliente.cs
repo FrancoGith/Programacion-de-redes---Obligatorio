@@ -10,34 +10,36 @@ namespace Cliente
         static void Main(string[] args)
         {
             Console.WriteLine("Iniciando Cliente");
-            // 1- Se crea el Socket del cliente
             var socketCliente = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            // 2- Definimos un Endpoint local del cliente
-            var endpointCliente = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0);
-            // 3- Asociación entre el socket y el endpoint local
+            var endpointCliente = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0); //TODO: Cambiar la string por una variable
             socketCliente.Bind(endpointCliente);
 
-            // 4- Definir un Endpoint remoto con la Ip y el puerto que tenga el servidor. Debo conocer los datos a los que me voy a conectar
-            var endpointServidor = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000);
+            var endpointServidor = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000); //TODO: Cambiar la string por una variable
 
-            // 5- Establezco conexión con el socket y el endpoint remoto (Servidor)
             socketCliente.Connect(endpointServidor);
             Console.WriteLine("Conexión establecida");
             Console.WriteLine("Escriba un meensaje para el Servidor");
             bool exit = false;
             while (!exit)
             {
-                string mensaje = Console.ReadLine();
-                if (mensaje.Equals("exit"))
-                {
-                    exit = true;
-                }
+                //6 opciones
 
-                byte[] data = Encoding.UTF8.GetBytes(mensaje);
-                int largoData = data.Length; //guarda el largo del mensaje
-                Console.WriteLine(largoData);
-                socketCliente.Send(BitConverter.GetBytes(largoData)); //Parte fija
-                socketCliente.Send(data); //Parte variable - mensaje
+                Console.WriteLine(@"Elija una opción:
+                1 - Alta de usuario
+                2 - Alta de perfil de trabajo
+                3 - Asociar foto de perfil a trabajo
+                4 - Consultar perfiles existentes
+                5 - Consultar perfil específico
+                6 - Mensajes
+                0 - Salir y desconectarse");
+
+                int opcion = Int32.Parse(Console.ReadLine());
+
+                byte[] data = Encoding.UTF8.GetBytes(opcion.ToString());
+                int largoData = data.Length; 
+                //Console.WriteLine(largoData);
+                socketCliente.Send(BitConverter.GetBytes(largoData)); 
+                socketCliente.Send(data); 
             }
         }
     }
