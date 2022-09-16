@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Protocolo;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,6 +18,9 @@ namespace Cliente
             var endpointServidor = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000); //TODO: Cambiar la string por una variable
 
             socketCliente.Connect(endpointServidor);
+
+            ManejoSockets manejoSockets = new ManejoSockets(socketCliente);
+
             Console.WriteLine("Conexión establecida");
             Console.WriteLine("Escriba un meensaje para el Servidor");
             bool exit = false;
@@ -38,7 +42,7 @@ namespace Cliente
                 switch (opcion)
                 {
                     case 1:
-                        AltaUsuario(socketCliente);
+                        AltaUsuario(manejoSockets);
                         break;
                         
                     case 2:
@@ -55,7 +59,7 @@ namespace Cliente
             }
         }
 
-        private static void AltaUsuario(Socket socketCliente)
+        private static void AltaUsuario(ManejoSockets manejoSockets)
         {
             Console.WriteLine("Alta de usuario");
 
@@ -81,14 +85,19 @@ namespace Cliente
 
             try
             {
-                    socketCliente.Send(parteFija);
-                    socketCliente.Send(mensajeServidor);
+                    manejoSockets.Send(parteFija);
+                    manejoSockets.Send(mensajeServidor);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
+        {
+            throw new NotImplementedException();
         }
 
         private static void Desconexion(Socket socketCliente)

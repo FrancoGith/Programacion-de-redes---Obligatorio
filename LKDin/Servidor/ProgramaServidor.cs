@@ -63,6 +63,9 @@ namespace Servidor
                         case 1:
                             AltaDeUsuario(manejoDataSocket, mensajeUsuario);
                             break;
+                        case 2:
+                            AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
+                            break;
                         default:
                             break;
                     }
@@ -85,7 +88,7 @@ namespace Servidor
             datosServidor.ListaUsuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
         }
 
-        private static void AltaDePerfilDeTrabajo(Socket socketCliente)
+        private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
             throw new NotImplementedException();
         }
