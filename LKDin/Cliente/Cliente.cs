@@ -33,14 +33,71 @@ namespace Cliente
                 6 - Mensajes
                 0 - Salir y desconectarse");
 
-                int opcion = Int32.Parse(Console.ReadLine());
+                int opcion = int.Parse(Console.ReadLine());
 
-                byte[] data = Encoding.UTF8.GetBytes(opcion.ToString());
-                int largoData = data.Length; 
-                //Console.WriteLine(largoData);
-                socketCliente.Send(BitConverter.GetBytes(largoData)); 
-                socketCliente.Send(data); 
+                switch (opcion)
+                {
+                    case 1:
+                        AltaUsuario(socketCliente);
+                        break;
+                        
+                    case 2:
+                        break;
+
+                    case 0:
+                        exit = true;
+                        Desconexion(socketCliente);
+                        break;
+                    default:
+                        Console.WriteLine("Ingrese una opción válida");
+                        break;
+                }
             }
+        }
+
+        private static void AltaUsuario(Socket socketCliente)
+        {
+            Console.WriteLine("Alta de usuario");
+
+            Console.WriteLine("Escriba el nombre de usuario");
+            string username = Console.ReadLine();
+            Console.WriteLine("Escriba la contraseña");
+            string password = Console.ReadLine();
+            
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Console.WriteLine("El nombre de usuario no puede estar vacío");
+                return;
+            }
+            else if (string.IsNullOrWhiteSpace(password))
+            {
+                Console.WriteLine("La contraseña no puede estar vacía");
+                return;
+            }
+
+            string mensaje = "0001" + username + "#" + password;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            byte[] parteFija = BitConverter.GetBytes(mensajeServidor.Length);
+
+            try
+            {
+                    socketCliente.Send(parteFija);
+                    socketCliente.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        private static void Desconexion(Socket socketCliente)
+        {
+            socketCliente.Shutdown(SocketShutdown.Both);
+            socketCliente.Close();
+
+            Console.WriteLine("Cliente desconectado");
+            Console.ReadLine();
         }
     }
 }
