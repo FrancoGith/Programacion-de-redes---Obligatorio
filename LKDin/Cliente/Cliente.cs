@@ -79,9 +79,13 @@ namespace Cliente
                 return;
             }
 
-            string mensaje = "0001" + username + "#" + password;
+            // TODO: refactor
+            
+            string mensaje = username + "#" + password;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            byte[] parteFija = BitConverter.GetBytes(mensajeServidor.Length);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "01" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
 
             try
             {

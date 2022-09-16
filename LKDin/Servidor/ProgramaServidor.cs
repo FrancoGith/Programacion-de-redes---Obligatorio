@@ -49,14 +49,14 @@ namespace Servidor
             {
                 try
                 {
-                    byte[] largodata = manejoDataSocket.Receive(Constantes.LargoParteFija);
-                    int largo = BitConverter.ToInt32(largodata);
-                    byte[] data = manejoDataSocket.Receive(largo);
+                    byte[] largoParteFija = manejoDataSocket.Receive(Constantes.LargoParteFija);
+                    string parteFija = Encoding.UTF8.GetString(largoParteFija);
+                    byte[] data = manejoDataSocket.Receive(int.Parse(parteFija.Substring(3)));
                     string mensajeUsuario = Encoding.UTF8.GetString(data);
 
                     Console.WriteLine($"Cliente dice: {mensajeUsuario}");
 
-                    int comando = ObtenerComando(mensajeUsuario);
+                    int comando = ObtenerComando(parteFija);
 
                     switch (comando)
                     {
@@ -82,9 +82,7 @@ namespace Servidor
 
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            string[] datos = ObtenerDatos(mensajeUsuario).Split("#");
-            Console.WriteLine($"Datos: {datos.ToString()}");
-
+            string[] datos = mensajeUsuario.Split("#");
             datosServidor.ListaUsuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
         }
 
@@ -117,11 +115,5 @@ namespace Servidor
         {
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
         }
-
-        private static string ObtenerDatos(string mensajeUsuario)
-        {
-            return mensajeUsuario.Substring(Constantes.LargoCodigo, mensajeUsuario.Length - Constantes.LargoCodigo);
-        }
-
     }
 }
