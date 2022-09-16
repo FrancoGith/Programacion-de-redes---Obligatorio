@@ -9,7 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cliente", "Cliente\Cliente.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dominio", "Dominio\Dominio.csproj", "{1B65C08C-7ADD-4DC7-95EA-07DC70D37ACC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protocolo", "Protocolo\Protocolo.csproj", "{04836CAD-094A-4E31-B0BA-7EB8F4CB0ED5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Protocolo", "Protocolo\Protocolo.csproj", "{04836CAD-094A-4E31-B0BA-7EB8F4CB0ED5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{88EB4AB7-07A6-4160-B471-510054D26D58}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

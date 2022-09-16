@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Protocolo;
 
 namespace Cliente
 {
@@ -11,12 +12,15 @@ namespace Cliente
         {
             Console.WriteLine("Iniciando Cliente");
             var socketCliente = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            var endpointCliente = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0); //TODO: Cambiar la string por una variable
+            var endpointCliente = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0);
             socketCliente.Bind(endpointCliente);
 
-            var endpointServidor = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000); //TODO: Cambiar la string por una variable
+            var endpointServidor = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000);
 
             socketCliente.Connect(endpointServidor);
+
+            ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
+
             Console.WriteLine("Conexión establecida");
             Console.WriteLine("Escriba un meensaje para el Servidor");
             bool exit = false;
@@ -38,7 +42,7 @@ namespace Cliente
                 switch (opcion)
                 {
                     case 1:
-                        AltaUsuario(socketCliente);
+                        AltaUsuario(manejoDataSocket);
                         break;
                         
                     case 2:
@@ -55,7 +59,7 @@ namespace Cliente
             }
         }
 
-        private static void AltaUsuario(Socket socketCliente)
+        private static void AltaUsuario(ManejoSockets manejoDataSocket)
         {
             Console.WriteLine("Alta de usuario");
 
@@ -81,8 +85,8 @@ namespace Cliente
 
             try
             {
-                    socketCliente.Send(parteFija);
-                    socketCliente.Send(mensajeServidor);
+                    manejoDataSocket.Send(parteFija);
+                    manejoDataSocket.Send(mensajeServidor);
             }
             catch (Exception e)
             {
