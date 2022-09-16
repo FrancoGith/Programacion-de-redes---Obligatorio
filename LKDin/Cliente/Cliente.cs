@@ -60,9 +60,9 @@ namespace Cliente
             Console.WriteLine("Alta de usuario");
 
             Console.WriteLine("Escriba el nombre de usuario");
-            string username = Console.ReadLine();
+            string username = Console.ReadLine().Trim();
             Console.WriteLine("Escriba la contraseña");
-            string password = Console.ReadLine();
+            string password = Console.ReadLine().Trim();
             
             if (string.IsNullOrWhiteSpace(username))
             {

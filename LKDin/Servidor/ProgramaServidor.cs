@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Dominio;
+using Protocolo;
+using System;
 using System.Data;
 using System.Net;
 using System.Net.Http.Headers;
@@ -42,27 +44,27 @@ namespace Servidor
         static void ManejarCliente(Socket socketCliente)
         {
             bool clienteConectado = true;
+            ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
             while (clienteConectado)
             {
                 try
                 {
-                    byte[] largodata = new byte[4];
-                    socketCliente.Receive(largodata);
+                    byte[] largodata = manejoDataSocket.Receive(Constantes.LargoParteFija);
                     int largo = BitConverter.ToInt32(largodata);
+                    byte[] data = manejoDataSocket.Receive(largo);
+                    string mensajeUsuario = Encoding.UTF8.GetString(data);
 
-                    byte[] data = new byte[largo];
-                    int cantDatos = socketCliente.Receive(data);
-                    
-                    if (cantDatos == 0)
-                    {
-                        clienteConectado = false;
-                    }
-                    else
-                    {
-                        string mensajeCliente = Encoding.UTF8.GetString(data);
-                        Console.WriteLine($"Opcion elegida por el cliente : {mensajeCliente}");
-                        
+                    Console.WriteLine($"Cliente dice: {mensajeUsuario}");
 
+                    int comando = ObtenerComando(mensajeUsuario);
+
+                    switch (comando)
+                    {
+                        case 1:
+                            AltaDeUsuario(manejoDataSocket, mensajeUsuario);
+                            break;
+                        default:
+                            break;
                     }
                 }
                 catch (SocketException e)
@@ -73,17 +75,14 @@ namespace Servidor
             Console.WriteLine("Cliente desconectado");
         }
 
-        static void AltaDeUsuario(Socket socketCliente)
+        
+
+        static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            byte[] largodata1 = new byte[4];
-            socketCliente.Receive(largodata1);
-            int largo1 = BitConverter.ToInt32(largodata1);
+            string[] datos = ObtenerDatos(mensajeUsuario).Split("#");
+            Console.WriteLine($"Datos: {datos.ToString()}");
 
-            byte[] data1 = new byte[largo1];
-            int cantDatos1 = socketCliente.Receive(data1);
-
-            Console.WriteLine($"Cliente dice: {Encoding.UTF8.GetString(data1)}");
-            datosServidor.ListaUsuarios.Add(Encoding.UTF8.GetString(data1));
+            datosServidor.ListaUsuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
         }
 
         private static void AltaDePerfilDeTrabajo(Socket socketCliente)
@@ -109,6 +108,16 @@ namespace Servidor
         private static void Mensajes(Socket socketCliente)
         {
             throw new NotImplementedException();
+        }
+
+        private static int ObtenerComando(string mensajeUsuario)
+        {
+            return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
+        }
+
+        private static string ObtenerDatos(string mensajeUsuario)
+        {
+            return mensajeUsuario.Substring(Constantes.LargoCodigo, mensajeUsuario.Length - Constantes.LargoCodigo);
         }
 
     }
