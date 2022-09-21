@@ -1,9 +1,10 @@
 ﻿using Protocolo;
 using System;
+using System.Collections.Immutable;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Protocolo;
+using System.Text.Unicode;
 
 namespace Cliente
 {
@@ -47,6 +48,7 @@ namespace Cliente
                         break;
                         
                     case 2:
+                        AltaDePerfilDeTrabajo(manejoDataSocket);
                         break;
 
                     case 0:
@@ -81,13 +83,11 @@ namespace Cliente
             }
 
             // TODO: refactor
-            
             string mensaje = username + "#" + password;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
             string e2 = "01" + e1;
             byte[] parteFija = Encoding.UTF8.GetBytes(e2);
-
             try
             {
                     manejoDataSocket.Send(parteFija);
@@ -102,7 +102,47 @@ namespace Cliente
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Alta Perfil de Trabajo");
+            Console.WriteLine("Ingrese el nombre del usuario del perfil a crear:");
+            string username = Console.ReadLine().Trim();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Console.WriteLine("El nombre de usuario no puede estar vacío");
+                return;
+            }
+            
+            List<string> habilidades = new List<string>();
+            Console.WriteLine(@"Ingrese las habilidades una por una: (código de escape: 'quit')");
+            string habilidad = Console.ReadLine().Trim();
+            while (habilidad != "quit")
+            {
+                habilidades.Add(habilidad);
+                habilidad = Console.ReadLine();
+            }
+            Console.WriteLine("Ingrese descripción del trabajo:");
+            string descripcion = Console.ReadLine().Trim();
+            // --------------------------------------------
+            //Console.WriteLine("Ingrese una foto") // TODO
+            // --------------------------------------------
+            string mensaje = username + Constantes.CaracterSeparador;
+            habilidades.ForEach(m => mensaje += m + Constantes.CaracterSeparadorListas);
+            mensaje += Constantes.CaracterSeparador;
+            mensaje += descripcion + Constantes.CaracterSeparador;
+
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = "02" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private static void Desconexion(Socket socketCliente)

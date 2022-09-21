@@ -14,7 +14,7 @@ namespace Servidor
     class ProgramaServidor
     {
         static int cantidadClientes = 2;
-        private static DatosServidor datosServidor = new() { ListaUsuarios = new() };
+        private static DatosServidor datosServidor = new DatosServidor();
         
         static void Main(string[] args)
         {
@@ -88,7 +88,16 @@ namespace Servidor
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            throw new NotImplementedException();
+            string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
+            Usuario usuario = datosServidor.GetUsuario(datos[0]);
+            if(usuario == null)
+            {
+                return; //TODO avisar que es un usuario incorrecto
+            }
+            List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
+            string descripcion = datos[2];
+            // TODO FOTO
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion /*TODO FOTO*/});
         }
         
         private static void AsociarFotoDePerfilATrabajo(Socket socketCliente)
