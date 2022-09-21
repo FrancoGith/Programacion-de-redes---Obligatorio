@@ -6,12 +6,11 @@ using System.Threading.Tasks;
 
 namespace Protocolo
 {
-    internal class Constantes
+    public class Constantes
     {
         public const int LargoCodigo = 2;
         public const int LargoLongitudMensaje = 4;
 
-
-        public const int LargoHeader = LargoCodigo + LargoLongitudMensaje;
+        public const int LargoParteFija = LargoCodigo + LargoLongitudMensaje;
     }
 }

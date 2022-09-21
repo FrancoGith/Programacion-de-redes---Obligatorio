@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dominio;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,6 @@ namespace Servidor
 {
     public class DatosServidor
     {
-        public List<string>? ListaUsuarios { get; set; }
+        public List<Usuario>? ListaUsuarios { get; set; }
     }
 }
