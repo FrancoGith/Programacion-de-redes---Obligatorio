@@ -11,7 +11,6 @@ namespace Protocolo
         public const int LargoCodigo = 2;
         public const int LargoLongitudMensaje = 4;
 
-
-        public const int LargoHeader = LargoCodigo + LargoLongitudMensaje;
+        public const int LargoParteFija = LargoCodigo + LargoLongitudMensaje;
     }
 }
