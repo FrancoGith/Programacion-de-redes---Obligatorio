@@ -75,9 +75,9 @@ namespace Cliente
             Console.WriteLine("Alta de usuario");
 
             Console.WriteLine("Escriba el nombre de usuario");
-            string username = Console.ReadLine();
+            string username = Console.ReadLine().Trim();
             Console.WriteLine("Escriba la contraseña");
-            string password = Console.ReadLine();
+            string password = Console.ReadLine().Trim();
             
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -90,9 +90,13 @@ namespace Cliente
                 return;
             }
 
-            string mensaje = "0001" + username + "#" + password;
+            // TODO: refactor
+            
+            string mensaje = username + "#" + password;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            byte[] parteFija = BitConverter.GetBytes(mensajeServidor.Length);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "01" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
 
             try
             {
@@ -106,13 +110,19 @@ namespace Cliente
             }
         }
 
+        private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
+        {
+            throw new NotImplementedException();
+        }
+
         private static void Desconexion(Socket socketCliente)
         {
             socketCliente.Shutdown(SocketShutdown.Both);
             socketCliente.Close();
 
             Console.WriteLine("Cliente desconectado");
-            Console.ReadLine();
+            Thread.Sleep(1000);
+            Environment.Exit(0);
         }
     }
 }
