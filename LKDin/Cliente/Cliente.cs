@@ -101,7 +101,8 @@ namespace Cliente
             socketCliente.Close();
 
             Console.WriteLine("Cliente desconectado");
-            Console.ReadLine();
+            Thread.Sleep(1000);
+            Environment.Exit(0);
         }
     }
 }
