@@ -6,6 +6,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Protocolo;
 
 namespace Servidor
 {
@@ -46,7 +47,7 @@ namespace Servidor
             {
                 try
                 {
-                    byte[] largodata = new byte[4];
+                    byte[] largodata = new byte[Constantes.LargoLongitudMensaje]; // Antes habia un 4, supongo que es lo mismo
                     socketCliente.Receive(largodata);
                     int largo = BitConverter.ToInt32(largodata);
 
@@ -60,7 +61,7 @@ namespace Servidor
                     else
                     {
                         string mensajeCliente = Encoding.UTF8.GetString(data);
-                        Console.WriteLine($"Opcion elegida por el cliente : {mensajeCliente}");
+                        Console.WriteLine($"Opción elegida por el cliente : {mensajeCliente}");
                         
 
                     }
@@ -75,7 +76,7 @@ namespace Servidor
 
         static void AltaDeUsuario(Socket socketCliente)
         {
-            byte[] largodata1 = new byte[4];
+            byte[] largodata1 = new byte[Constantes.LargoLongitudMensaje];
             socketCliente.Receive(largodata1);
             int largo1 = BitConverter.ToInt32(largodata1);
 

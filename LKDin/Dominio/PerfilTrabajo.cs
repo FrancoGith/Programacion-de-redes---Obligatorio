@@ -9,7 +9,7 @@ namespace Dominio
     public class PerfilTrabajo
     {
         public Usuario Usuario { get; set; }
-        public List<string> Habilidads { get; set; }
+        public List<string> Habilidades { get; set; }
         public string Descripcion { get; set; }
         public string Foto { get; set; }
     }
