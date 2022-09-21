@@ -1,4 +1,4 @@
-﻿using Dominio;
+using Dominio;
 using Protocolo;
 using System;
 using System.Data;
@@ -13,17 +13,23 @@ namespace Servidor
 {
     class ProgramaServidor
     {
-        static int cantidadClientes = 2;
+        static readonly SettingsManager settingsManager = new SettingsManager();
         private static DatosServidor datosServidor = new() { ListaUsuarios = new() };
         
         static void Main(string[] args)
         {
             Console.WriteLine("Levantando Servidor");
-            var socketServidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            var endpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000);
-            socketServidor.Bind(endpoint);
 
-            socketServidor.Listen(100);
+            string serverIP = settingsManager.ReadSettings(ServerConfig.serverIPconfigKey);
+            int serverPort = int.Parse(settingsManager.ReadSettings(ServerConfig.serverPortconfigKey));
+            int serverListen = int.Parse(settingsManager.ReadSettings(ServerConfig.serverListenconfigKey));
+            int cantidadClientes = int.Parse(settingsManager.ReadSettings(ServerConfig.serverClientsconfigKey));
+
+            var socketServidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var endpoint = new IPEndPoint(IPAddress.Parse(serverIP), serverPort);
+            
+            socketServidor.Bind(endpoint);
+            socketServidor.Listen(serverListen);
 
             int clientesConectados = 0;
             while (clientesConectados <= cantidadClientes)
