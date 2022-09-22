@@ -55,10 +55,21 @@ namespace Cliente
                     case 1:
                         AltaUsuario(manejoDataSocket);
                         break;
-                        
                     case 2:
+                        AltaDePerfilDeTrabajo(manejoDataSocket);
                         break;
-
+                    case 3:
+                        AsociarFotoPerfilTrabajo(manejoDataSocket);
+                        break;
+                    case 4:
+                        ConsultarPerfilesExistentes(manejoDataSocket);
+                        break;
+                    case 5:
+                        ConsultarPerfilEspecifico(manejoDataSocket);
+                        break;
+                    case 6:
+                        Mensajes(manejoDataSocket);
+                        break;
                     case 0:
                         exit = true;
                         Desconexion(socketCliente);
@@ -115,6 +126,74 @@ namespace Cliente
             throw new NotImplementedException();
         }
 
+        private static void AsociarFotoPerfilTrabajo(ManejoSockets manejoDataSocket)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void ConsultarPerfilesExistentes(ManejoSockets manejoDataSocket)
+        {
+            Console.WriteLine("Consultar perfiles existentes");
+
+            List<string> habilidades = new();
+            List<string> palabrasDescripcion = new();
+            
+            bool cancel = false;
+            while (!cancel)
+            {
+                Console.WriteLine(@"Elija una opción de busqueda:
+                1 - Habilidades
+                2 - Descripción
+                0 - Cancelar");
+
+                int opcion = int.Parse(Console.ReadLine());
+                switch (opcion)
+                {
+                    case 1:
+                        habilidades = IngresarHabilidadesConsulta(habilidades);
+                        break;
+                    case 2:
+                        palabrasDescripcion = IngresarDescripcionConsulta(palabrasDescripcion);
+                        break;
+                    case 0:
+                        cancel = true;
+                        break;
+                    default:
+                        Console.WriteLine("Ingrese una opción válida");
+                        break;
+                }
+            }
+
+            // TODO: refactor
+
+            string mensaje = string.Join(" ", habilidades) + "ϴ" + string.Join(" ", palabrasDescripcion);
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "04" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
+            
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void Mensajes(ManejoSockets manejoDataSocket)
+        {
+            throw new NotImplementedException();
+        }
+
         private static void Desconexion(Socket socketCliente)
         {
             socketCliente.Shutdown(SocketShutdown.Both);
@@ -123,6 +202,38 @@ namespace Cliente
             Console.WriteLine("Cliente desconectado");
             Thread.Sleep(1000);
             Environment.Exit(0);
+        }
+
+        private static List<string> IngresarHabilidadesConsulta(List<string> habilidades)
+        {
+            Console.WriteLine("Ingrese habilidades para filtrar (0 para terminar) ");
+            string habilidad = "";
+            while (habilidad != "0")
+            {
+                habilidad = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(habilidad))
+                {
+                    habilidades.Add(habilidad);
+                }
+            }
+            habilidades.RemoveAt(habilidades.Count - 1);
+            return habilidades;
+        }
+
+        private static List<string> IngresarDescripcionConsulta(List<string> palabras)
+        {
+            Console.WriteLine("Ingrese palabras clave para filtrar (0 para terminar) ");
+            string palabraClave = "";
+            while (palabraClave != "0")
+            {
+                palabraClave = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(palabraClave))
+                {
+                    palabras.Add(palabraClave);
+                }
+            }
+            palabras.RemoveAt(palabras.Count - 1);
+            return palabras;
         }
     }
 }

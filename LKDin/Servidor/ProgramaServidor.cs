@@ -1,4 +1,4 @@
-using Dominio;
+﻿using Dominio;
 using Protocolo;
 using System;
 using System.Data;
@@ -72,6 +72,9 @@ namespace Servidor
                         case 2:
                             AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
                             break;
+                        case 4:
+                            ConsultarPerfilesExistentes(manejoDataSocket, mensajeUsuario);
+                            break;
                         default:
                             break;
                     }
@@ -97,22 +100,23 @@ namespace Servidor
             throw new NotImplementedException();
         }
         
-        private static void AsociarFotoDePerfilATrabajo(Socket socketCliente)
+        private static void AsociarFotoDePerfilATrabajo(ManejoSockets socketCliente)
         {
             throw new NotImplementedException();
         }
 
-        private static void ConsultarPerfilesExistentes(Socket socketCliente)
+        private static void ConsultarPerfilesExistentes(ManejoSockets socketCliente, string mensajeUsuario)
+        {
+            string[] datos = mensajeUsuario.Split("ϴ");
+            Console.WriteLine("q");
+        }
+        
+        private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente)
         {
             throw new NotImplementedException();
         }
         
-        private static void ConsultarPerfilEspecifico(Socket socketCliente)
-        {
-            throw new NotImplementedException();
-        }
-        
-        private static void Mensajes(Socket socketCliente)
+        private static void Mensajes(ManejoSockets socketCliente)
         {
             throw new NotImplementedException();
         }
