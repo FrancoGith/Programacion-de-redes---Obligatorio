@@ -49,6 +49,10 @@ namespace Cliente
                     case 2:
                         break;
 
+                    case 6:
+                        Mensajes(manejoDataSocket);
+                        break;
+
                     case 0:
                         exit = true;
                         Desconexion(socketCliente);
@@ -103,6 +107,105 @@ namespace Cliente
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
         {
             throw new NotImplementedException();
+        }
+
+        private static void Mensajes(ManejoSockets manejoDataSocket)
+        {
+            //Solicito la lista de usuarios
+            // TODO: refactor
+
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes("600000");
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo la lista de usuarios
+            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            byte[] data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
+            string listaUsuarios = Encoding.UTF8.GetString(data);
+            string[] usuarios = listaUsuarios.Split('#');
+
+            Console.WriteLine("Usuarios conectados: \n");
+            for (int i = 0; i < usuarios.Length; i++)
+            {
+                Console.WriteLine(i + " - " + usuarios[i]);
+            }
+
+            Console.WriteLine("Seleccione el destinatario: ");
+            string destinatario = usuarios[int.Parse(Console.ReadLine())]; //Ésta línea tiene más agujeros que el cadaver de tupac, arreglala [TODO]
+
+            Console.WriteLine("\nSeleccione el emisor: ");
+            string emisor = usuarios[int.Parse(Console.ReadLine())]; //TODO: ídem
+
+            //pedirle al servidor el chat con el destinatario
+            string mensaje = emisor + "#" + destinatario;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string parteFija = "61" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo el historial de mensajes
+            encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
+            string listaMensajes = Encoding.UTF8.GetString(data);
+            string[] mensajes = listaUsuarios.Split('#');
+
+            Console.Clear();
+            Console.WriteLine("Chat con " + destinatario);
+            Console.WriteLine("-   -   -   -   -   -   -   -");
+            foreach (string mensajeChat in mensajes)
+            {
+                Console.WriteLine(mensajeChat);
+            }
+
+            //Enviar un mensaje
+            mensaje = Console.ReadLine();
+
+            //pedirle al servidor el chat con el destinatario
+            mensaje = emisor + "#" + destinatario + "#" + mensaje;
+            mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            parteFija = "62" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private static void Desconexion(Socket socketCliente)

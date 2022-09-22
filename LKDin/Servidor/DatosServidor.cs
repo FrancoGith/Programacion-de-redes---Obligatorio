@@ -1,4 +1,5 @@
 ﻿using Dominio;
+using Dominio.Mensajes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace Servidor
     public class DatosServidor
     {
         public List<Usuario>? ListaUsuarios { get; set; }
+        public List<HistorialChat>? ListaHistoriales { get; set; }
     }
 }
