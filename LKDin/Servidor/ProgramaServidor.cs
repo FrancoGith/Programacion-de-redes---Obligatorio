@@ -95,10 +95,14 @@ namespace Servidor
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
             string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
-            Usuario usuario = datosServidor.GetUsuario(datos[0]);
-            if(usuario == null)
+            Usuario usuario;
+            try
             {
-                return; //TODO avisar que es un usuario incorrecto
+                usuario = datosServidor.GetUsuario(datos[0]);
+            } catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return;
             }
             List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
             string descripcion = datos[2];
