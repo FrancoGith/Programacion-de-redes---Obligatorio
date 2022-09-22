@@ -190,7 +190,7 @@ namespace Servidor
 
             HistorialChat chatActivo = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((contenido[0], contenido[1])) || x.usuarios.Equals((contenido[1], contenido[0])));
 
-            chatActivo.mensajes.Append(contenido[0] + " dice: " + contenido[2]);
+            chatActivo.mensajes.Add(contenido[0] + " dice: " + contenido[2]);
         }
 
         private static int ObtenerComando(string mensajeUsuario)

@@ -9,11 +9,11 @@ namespace Dominio.Mensajes
     public class HistorialChat
     {
         public (string, string) usuarios;
-        public string[] mensajes;
+        public List<string> mensajes;
 
         public HistorialChat()
         { 
-            mensajes = new string[0];
+            mensajes = new List<string>();
         }
     }
 }

@@ -162,44 +162,34 @@ namespace Cliente
                 throw;
             }
 
-            try
-            {
-                manejoDataSocket.Send(encodingParteFija);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-
             //Recibo el historial de mensajes
             encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
             respuesta = Encoding.UTF8.GetString(encodingRespuesta);
             data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
             string listaMensajes = Encoding.UTF8.GetString(data);
-            string[] mensajes = listaUsuarios.Split('#');
+            string[] mensajes = listaMensajes.Split('#');
 
             Console.Clear();
             Console.WriteLine("Chat con " + destinatario);
             Console.WriteLine("-   -   -   -   -   -   -   -");
-            foreach (string mensajeChat in mensajes)
+            foreach (string mensajeHistorialChat in mensajes)
             {
-                Console.WriteLine(mensajeChat);
+                Console.WriteLine(mensajeHistorialChat);
             }
 
             //Enviar un mensaje
-            mensaje = Console.ReadLine();
+            string textoChat = Console.ReadLine();
 
-            //pedirle al servidor el chat con el destinatario
-            mensaje = emisor + "#" + destinatario + "#" + mensaje;
-            mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            parteFija = "62" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+            //enviar mensaje al servidor
+            string mensajeChat = emisor + "#" + destinatario + "#" + textoChat;
+            byte[] encodingMensajeChat = Encoding.UTF8.GetBytes(mensajeChat);
+            string chatParteFija = "62" + encodingMensajeChat.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] encodingChatParteFija = Encoding.UTF8.GetBytes(chatParteFija);
 
             try
             {
-                manejoDataSocket.Send(encodingParteFija);
-                manejoDataSocket.Send(mensajeServidor);
+                manejoDataSocket.Send(encodingChatParteFija);
+                manejoDataSocket.Send(encodingMensajeChat);
             }
             catch (Exception e)
             {
