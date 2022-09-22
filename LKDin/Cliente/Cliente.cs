@@ -183,23 +183,30 @@ namespace Cliente
                 Console.WriteLine(@"Elija una opción de busqueda:
                 1 - Habilidades
                 2 - Descripción
-                0 - Cancelar");
+                0 - Finalizar");
 
-                int opcion = int.Parse(Console.ReadLine());
-                switch (opcion)
+                try
                 {
-                    case 1:
-                        habilidades = IngresarHabilidadesConsulta(habilidades);
-                        break;
-                    case 2:
-                        palabrasDescripcion = IngresarDescripcionConsulta(palabrasDescripcion);
-                        break;
-                    case 0:
-                        cancel = true;
-                        break;
-                    default:
-                        Console.WriteLine("Ingrese una opción válida");
-                        break;
+                    int opcion = int.Parse(Console.ReadLine());
+                    switch (opcion)
+                    {
+                        case 1:
+                            habilidades = IngresarHabilidadesConsulta(habilidades);
+                            break;
+                        case 2:
+                            palabrasDescripcion = IngresarDescripcionConsulta(palabrasDescripcion);
+                            break;
+                        case 0:
+                            cancel = true;
+                            break;
+                        default:
+                            Console.WriteLine("Ingrese una opción válida");
+                            break;
+                    }
+                }
+                catch (FormatException e)
+                {
+                    Console.WriteLine("Solo se permiten opciones");
                 }
             }
 
@@ -208,13 +215,20 @@ namespace Cliente
             string mensaje = string.Join(" ", habilidades) + "ϴ" + string.Join(" ", palabrasDescripcion);
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = "04" + e1;
+            string e2 = "40" + e1;
             byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             
             try
             {
                 manejoDataSocket.Send(parteFija);
                 manejoDataSocket.Send(mensajeServidor);
+
+                byte[] largoParteFijaRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+                string parteFijaRespuesta = Encoding.UTF8.GetString(largoParteFijaRespuesta);
+                byte[] dataRespuesta = manejoDataSocket.Receive(int.Parse(parteFijaRespuesta.Substring(3)));
+                string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
+
+                Console.WriteLine(mensajeUsuarioRespuesta);
             }
             catch (Exception e)
             {
@@ -225,7 +239,46 @@ namespace Cliente
 
         private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Consultar perfil especifico");
+
+            string usuarioBuscar = "";
+            bool cancel = false;
+            while (!cancel)
+            {
+                Console.WriteLine("Ingrese nombre de usuario");
+                usuarioBuscar = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(usuarioBuscar))
+                {
+                    cancel = true;
+                    break;
+                }
+            }
+
+            // TODO: refactor
+
+            string mensaje = usuarioBuscar;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "50" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
+
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+
+                byte[] largoParteFijaRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+                string parteFijaRespuesta = Encoding.UTF8.GetString(largoParteFijaRespuesta);
+                byte[] dataRespuesta = manejoDataSocket.Receive(int.Parse(parteFijaRespuesta.Substring(3)));
+                string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
+
+                Console.WriteLine(mensajeUsuarioRespuesta);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private static void Mensajes(ManejoSockets manejoDataSocket)

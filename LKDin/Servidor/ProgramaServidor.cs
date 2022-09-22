@@ -2,6 +2,7 @@
 using Protocolo;
 using System;
 using System.Data;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
@@ -14,10 +15,17 @@ namespace Servidor
     class ProgramaServidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-        private static DatosServidor datosServidor = new() { ListaUsuarios = new() };
+        private static DatosServidor datosServidor = new() { ListaUsuarios = new(), PerfilesTrabajo = new() };
         
         static void Main(string[] args)
         {
+
+            List<string> hab = new() { "LoL", "Programacion" };
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 1" }, Descripcion = "Me falta pala", Habilidades = hab });
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 2" }, Descripcion = "Se muchas cosas", Habilidades = hab });
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 3" }, Descripcion = "Bases", Habilidades = hab });
+
+
             Console.WriteLine("Levantando Servidor");
 
             string serverIP = settingsManager.ReadSettings(ServerConfig.serverIPconfigKey);
@@ -72,8 +80,11 @@ namespace Servidor
                         case 2:
                             AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
                             break;
-                        case 4:
+                        case 40:
                             ConsultarPerfilesExistentes(manejoDataSocket, mensajeUsuario);
+                            break;
+                        case 50:
+                            ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
                             break;
                         default:
                             break;
@@ -121,14 +132,104 @@ namespace Servidor
         private static void ConsultarPerfilesExistentes(ManejoSockets socketCliente, string mensajeUsuario)
         {
             string[] datos = mensajeUsuario.Split("ϴ");
-            Console.WriteLine("q");
+
+            List<string> habilidades = datos[0].Split(" ").ToList();
+            habilidades = habilidades.Select(habilidad => habilidad.ToUpper()).ToList();
+
+            List<string> palabras = datos[1].Split(" ").ToList();
+            palabras = palabras.Select(palabra => palabra.ToUpper()).ToList();
+
+            List<string> usuariosEncontrados = new();
+
+            foreach (var perfil in datosServidor.PerfilesTrabajo)
+            {
+                List<string> infoPerfil = perfil.GetSearchData().Split(" ").ToList();
+                infoPerfil = infoPerfil.Select(info => info.ToUpper()).ToList();
+                foreach (string info in infoPerfil)
+                {
+                    if (habilidades.Contains(info) || palabras.Contains(info))
+                    {
+                        if (!usuariosEncontrados.Contains(perfil.Usuario.Username))
+                        {
+                            usuariosEncontrados.Add(perfil.Usuario.Username);
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine("Se termino la busqueda de usuarios");
+
+            string respuestaUsuario = "";
+            if (usuariosEncontrados.Count != 0)
+            {
+                respuestaUsuario = "Usuarios encontrados: ";
+                foreach (string nombreUsuario in usuariosEncontrados)
+                {
+                    PerfilTrabajo perfilTrabajo = ObtenerPerfilTrabajo(nombreUsuario);
+                    string habilidadesPerfil = string.Join("-", perfilTrabajo.Habilidades);
+                    string resumenPerfil = $"\n    Nombre: {perfilTrabajo.Usuario.Username}\n    Descripción: {perfilTrabajo.Descripcion}\n    Habilidades: {habilidadesPerfil}\n";
+                    respuestaUsuario = $"{respuestaUsuario} \n {resumenPerfil}";
+                }
+            }
+            else
+            {
+                respuestaUsuario = "\nNo se encontraron coincidencias\n";
+            }
+
+            string mensaje = respuestaUsuario;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "05" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
+
+            try
+            {
+                socketCliente.Send(parteFija);
+                socketCliente.Send(mensajeServidor);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
         }
-        
-        private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente)
+
+        private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente, string mensajeUsuario)
         {
-            throw new NotImplementedException();
+            string[] datos = mensajeUsuario.Split("ϴ");
+
+            PerfilTrabajo usuarioEncontrado = datosServidor.PerfilesTrabajo.FirstOrDefault(usuario => usuario.Usuario.Username == datos[0]);
+
+            string respuestaUsuario = "";
+            if (usuarioEncontrado != null)
+            {
+                string habilidades = string.Join("-", usuarioEncontrado.Habilidades);
+                respuestaUsuario = $"\nUsuario encontrado\n    Nombre: {usuarioEncontrado.Usuario.Username}\n    Descripción: {usuarioEncontrado.Descripcion}\n    Habilidades: {habilidades}\n";
+            }
+            else
+            {
+                respuestaUsuario = "\nUsuario no existente\n";
+            }
+
+            string mensaje = respuestaUsuario;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "50" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
+
+            try
+            {
+                socketCliente.Send(parteFija);
+                socketCliente.Send(mensajeServidor);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
-        
+
         private static void Mensajes(ManejoSockets socketCliente)
         {
             throw new NotImplementedException();
@@ -137,6 +238,11 @@ namespace Servidor
         private static int ObtenerComando(string mensajeUsuario)
         {
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
+        }
+
+        private static PerfilTrabajo ObtenerPerfilTrabajo(string nombreUsuario)
+        {
+            return datosServidor.PerfilesTrabajo.FirstOrDefault(perfil => perfil.Usuario.Username == nombreUsuario);
         }
     }
 }
