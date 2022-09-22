@@ -136,6 +136,7 @@ namespace Cliente
             // --------------------------------------------
             string mensaje = username + Constantes.CaracterSeparador;
             habilidades.ForEach(m => mensaje += m + Constantes.CaracterSeparadorListas);
+            mensaje = mensaje.Remove(mensaje.Length-1, 1);
             mensaje += Constantes.CaracterSeparador;
             mensaje += descripcion + Constantes.CaracterSeparador;
 
