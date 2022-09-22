@@ -16,7 +16,7 @@ namespace Servidor
     class ProgramaServidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-        private static DatosServidor datosServidor = new() { ListaUsuarios = new(), PerfilesTrabajo = new() };
+        private static DatosServidor datosServidor = new() { Usuarios = new(), PerfilesTrabajo = new() };
         
         static void Main(string[] args)
         {
@@ -89,6 +89,7 @@ namespace Servidor
                             break;
                         case 50:
                             ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
+                            break;
                         default:
                             break;
                     }
@@ -224,7 +225,7 @@ namespace Servidor
             }
             else
             {
-                respuestaUsuario = "\nUsuario no existente\n";
+                respuestaUsuario = "\nPerfil de trabajo no existente\n";
             }
 
             string mensaje = respuestaUsuario;
