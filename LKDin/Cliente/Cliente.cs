@@ -131,19 +131,58 @@ namespace Cliente
             string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
             byte[] data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
             string listaUsuarios = Encoding.UTF8.GetString(data);
-            string[] usuarios = listaUsuarios.Split('#');
+            List<string> usuarios = listaUsuarios.Split('#').ToList<string>();
+            
+            usuarios.RemoveAt(usuarios.Count - 1); //El último elemento siempre es vacío por el formato con el que viene,
+                                                   //entonces acá lo saco, es medio hacky pero evita que tengamos
+                                                   //que hacer try catch más adelante
 
             Console.WriteLine("Usuarios conectados: \n");
-            for (int i = 0; i < usuarios.Length; i++)
+            for (int i = 0; i < usuarios.Count; i++)
             {
                 Console.WriteLine(i + " - " + usuarios[i]);
             }
 
+            string destinatario = string.Empty;
+            string emisor = string.Empty;
+            bool formatoOk = false;
+
             Console.WriteLine("Seleccione el destinatario: ");
-            string destinatario = usuarios[int.Parse(Console.ReadLine())]; //Ésta línea tiene más agujeros que el cadaver de tupac, arreglala [TODO]
+            while (!formatoOk)
+            {
+                try
+                {
+                    destinatario = usuarios[int.Parse(Console.ReadLine())];
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
 
             Console.WriteLine("\nSeleccione el emisor: ");
-            string emisor = usuarios[int.Parse(Console.ReadLine())]; //TODO: ídem
+            formatoOk = false;
+            while (!formatoOk)
+            {
+                try
+                {
+                    emisor = usuarios[int.Parse(Console.ReadLine())];
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
 
             //pedirle al servidor el chat con el destinatario
             string mensaje = emisor + "#" + destinatario;
