@@ -1,5 +1,6 @@
 using Dominio;
 using Protocolo;
+using Protocolo.ManejoArchivos;
 using System;
 using System.Data;
 using System.Net;
@@ -14,7 +15,7 @@ namespace Servidor
     class ProgramaServidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-        private static DatosServidor datosServidor = new() { ListaUsuarios = new() };
+        private static DatosServidor datosServidor = new() { Usuarios = new() };
         
         static void Main(string[] args)
         {
@@ -72,6 +73,9 @@ namespace Servidor
                         case 2:
                             AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
                             break;
+                        case 3:
+                            AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente, mensajeUsuario);
+                            break;
                         default:
                             break;
                     }
@@ -89,7 +93,7 @@ namespace Servidor
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
             string[] datos = mensajeUsuario.Split("#");
-            datosServidor.ListaUsuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
+            datosServidor.Usuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
@@ -110,9 +114,21 @@ namespace Servidor
             datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion /*TODO FOTO*/});
         }
         
-        private static void AsociarFotoDePerfilATrabajo(Socket socketCliente)
+        private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
         {
-            throw new NotImplementedException();
+            PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
+            ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
+            try
+            {
+                perfilUsuario.Foto = manejo.RecibirArchivo();
+            } catch (Exception e)
+            {
+                EnviarMensajeCliente(e.Message, manejoDataSocket);
+                Console.WriteLine("Ocurrio un error al recibir un archivo");
+                return;
+            }
+            EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket);
+            Console.WriteLine("Se ha recibido un archivo");
         }
 
         private static void ConsultarPerfilesExistentes(Socket socketCliente)
@@ -133,6 +149,22 @@ namespace Servidor
         private static int ObtenerComando(string mensajeUsuario)
         {
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
+        }
+
+        private static void EnviarMensajeCliente(string mensaje, ManejoSockets manejoDataSocket)
+        {
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+            try
+            { // TODO Refactor a un metodo
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e2)
+            {
+                Console.WriteLine(e2);
+            }
         }
     }
 }
