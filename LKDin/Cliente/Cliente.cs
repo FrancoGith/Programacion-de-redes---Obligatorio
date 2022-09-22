@@ -1,26 +1,36 @@
 ﻿using Protocolo;
+using Servidor;
 using System;
 using System.Collections.Immutable;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Unicode;
 
 namespace Cliente
 {
     class Cliente
     {
+        static readonly SettingsManager settingsManager = new SettingsManager();
+        
         static void Main(string[] args)
         {
             Console.WriteLine("Iniciando Cliente");
+
+            string endPointClienteserverIp = settingsManager.ReadSettings(ClientConfig.endPointClienteIPconfigKey);
+            int endPointClienteserverPort = int.Parse(settingsManager.ReadSettings(ClientConfig.endPointClientePortconfigKey));
+
+            string serverIp = settingsManager.ReadSettings(ClientConfig.serverIPconfigKey);
+            int serverPort = int.Parse(settingsManager.ReadSettings(ClientConfig.serverPortconfigKey));
+
             var socketCliente = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            var endpointCliente = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0);
+            var endpointCliente = new IPEndPoint(IPAddress.Parse(endPointClienteserverIp), endPointClienteserverPort);
+            
             socketCliente.Bind(endpointCliente);
 
-            var endpointServidor = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 14000);
-
+            var endpointServidor = new IPEndPoint(IPAddress.Parse(serverIp), serverPort);
+           
             socketCliente.Connect(endpointServidor);
-
+            
             ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
 
             Console.WriteLine("Conexión establecida");
