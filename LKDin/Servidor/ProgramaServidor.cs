@@ -97,7 +97,20 @@ namespace Servidor
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            throw new NotImplementedException();
+            string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
+            Usuario usuario;
+            try
+            {
+                usuario = datosServidor.GetUsuario(datos[0]);
+            } catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
+            List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
+            string descripcion = datos[2];
+            // TODO FOTO
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion /*TODO FOTO*/});
         }
         
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets socketCliente)
