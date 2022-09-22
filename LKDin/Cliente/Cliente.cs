@@ -1,4 +1,5 @@
 ﻿using Protocolo;
+using Protocolo.ManejoArchivos;
 using Servidor;
 using System;
 using System.Collections.Immutable;
@@ -60,7 +61,7 @@ namespace Cliente
                         AltaDePerfilDeTrabajo(manejoDataSocket);
                         break;
                     case 3:
-                        AsociarFotoPerfilTrabajo(manejoDataSocket);
+                        AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente);
                         break;
                     case 4:
                         ConsultarPerfilesExistentes(manejoDataSocket);
@@ -146,6 +147,7 @@ namespace Cliente
             // --------------------------------------------
             string mensaje = username + Constantes.CaracterSeparador;
             habilidades.ForEach(m => mensaje += m + Constantes.CaracterSeparadorListas);
+            mensaje = mensaje.Remove(mensaje.Length-1, 1);
             mensaje += Constantes.CaracterSeparador;
             mensaje += descripcion + Constantes.CaracterSeparador;
 
@@ -165,9 +167,30 @@ namespace Cliente
             }
         }
 
-        private static void AsociarFotoPerfilTrabajo(ManejoSockets manejoDataSocket)
+        private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Asociar foto a un perfil de trabajo");
+            Console.WriteLine("Ingrese el nombre del usuario del perfil a modificar:");
+            string username = Console.ReadLine().Trim();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Console.WriteLine("El nombre de usuario no puede estar vacío");
+                return;
+            }
+
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(username);
+            string e1 = "03" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+            Console.WriteLine("Ingrese la ruta completa del archivo a enviar: ");
+            String abspath = Console.ReadLine();
+            while (string.IsNullOrWhiteSpace(abspath))
+            {
+                Console.WriteLine("Debe ingresar una ruta valida. Intente nuevamente:");
+                abspath = Console.ReadLine();
+            }
+            ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
+            fileCommonHandler.SendFile(abspath);
+            Console.WriteLine("Se envio el archivo al Servidor");
         }
 
         private static void ConsultarPerfilesExistentes(ManejoSockets manejoDataSocket)
@@ -284,7 +307,7 @@ namespace Cliente
         private static void Mensajes(ManejoSockets manejoDataSocket)
         {
             throw new NotImplementedException();
-        }
+        }            
 
         private static void Desconexion(Socket socketCliente)
         {

@@ -9,18 +9,25 @@ namespace Servidor
 {
     public class DatosServidor
     {
-        public List<Usuario>? ListaUsuarios { get; set; }
+        public List<Usuario>? Usuarios { get; set; }
         public List<PerfilTrabajo>? PerfilesTrabajo { get; set; }
         public DatosServidor()
         {
-            ListaUsuarios = new List<Usuario>();
+            Usuarios = new List<Usuario>();
             PerfilesTrabajo = new List<PerfilTrabajo>();
         }
 
         public Usuario GetUsuario(string _username)
         {
-            Usuario retorno = ListaUsuarios.Find(a => a.Username == _username);
+            Usuario retorno = Usuarios.Find(a => a.Username == _username);
             if (retorno == null) throw new Exception("Usuario no encontrado");
+            else return retorno;
+        }
+
+        public PerfilTrabajo GetPerfilTrabajo(string _username)
+        {
+            PerfilTrabajo retorno = PerfilesTrabajo.Find(a => a.Usuario.Username == _username);
+            if (retorno == null) throw new Exception("Perfil no encontrado");
             else return retorno;
         }
     }
