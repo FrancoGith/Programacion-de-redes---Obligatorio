@@ -64,6 +64,11 @@ namespace Cliente
                     case 3:
                         AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente);
                         break;
+
+                    case 6:
+                        Mensajes(manejoDataSocket);
+                        break;
+
                     case 0:
                         exit = true;
                         Desconexion(socketCliente);
@@ -196,6 +201,135 @@ namespace Cliente
             fileCommonHandler.SendFile(abspath);
             Console.WriteLine("Se envio el archivo al Servidor");
 
+        }
+
+        private static void Mensajes(ManejoSockets manejoDataSocket)
+        {
+            //Solicito la lista de usuarios
+            // TODO: refactor
+
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes("600000");
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo la lista de usuarios
+            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            byte[] data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
+            string listaUsuarios = Encoding.UTF8.GetString(data);
+            List<string> usuarios = listaUsuarios.Split('#').ToList<string>();
+            
+            usuarios.RemoveAt(usuarios.Count - 1); //El último elemento siempre es vacío por el formato con el que viene,
+                                                   //entonces acá lo saco, es medio hacky pero evita que tengamos
+                                                   //que hacer try catch más adelante
+
+            Console.WriteLine("Usuarios conectados: \n");
+            for (int i = 0; i < usuarios.Count; i++)
+            {
+                Console.WriteLine(i + " - " + usuarios[i]);
+            }
+
+            string destinatario = string.Empty;
+            string emisor = string.Empty;
+            bool formatoOk = false;
+
+            Console.WriteLine("Seleccione el destinatario: ");
+            while (!formatoOk)
+            {
+                try
+                {
+                    destinatario = usuarios[int.Parse(Console.ReadLine())];
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
+
+            Console.WriteLine("\nSeleccione el emisor: ");
+            formatoOk = false;
+            while (!formatoOk)
+            {
+                try
+                {
+                    emisor = usuarios[int.Parse(Console.ReadLine())];
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
+
+            //pedirle al servidor el chat con el destinatario
+            string mensaje = emisor + "#" + destinatario;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string parteFija = "61" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo el historial de mensajes
+            encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
+            string listaMensajes = Encoding.UTF8.GetString(data);
+            string[] mensajes = listaMensajes.Split('#');
+
+            //Escribo mensajes anteriores
+            Console.Clear();
+            Console.WriteLine("Chat con " + destinatario);
+            Console.WriteLine("-   -   -   -   -   -   -   -");
+            foreach (string mensajeHistorialChat in mensajes)
+            {
+                Console.WriteLine(mensajeHistorialChat);
+            }
+
+            //Enviar un mensaje
+            string textoChat = Console.ReadLine();
+
+            //enviar mensaje al servidor
+            string mensajeChat = emisor + "#" + destinatario + "#" + textoChat;
+            byte[] encodingMensajeChat = Encoding.UTF8.GetBytes(mensajeChat);
+            string chatParteFija = "62" + encodingMensajeChat.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] encodingChatParteFija = Encoding.UTF8.GetBytes(chatParteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingChatParteFija);
+                manejoDataSocket.Send(encodingMensajeChat);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private static void Desconexion(Socket socketCliente)
