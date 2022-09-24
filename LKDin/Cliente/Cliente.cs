@@ -1,4 +1,5 @@
-﻿using Protocolo;
+﻿using Dominio;
+using Protocolo;
 using Protocolo.ManejoArchivos;
 using Servidor;
 using System;
@@ -12,6 +13,8 @@ namespace Cliente
     class Cliente
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
+
+        string usuario = "";
         
         static void Main(string[] args)
         {
@@ -35,7 +38,35 @@ namespace Cliente
             ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
 
             Console.WriteLine("Conexión establecida");
-            Console.WriteLine("Escriba un meensaje para el Servidor");
+
+            bool login = false;
+
+            while (!login)
+            {
+                Console.WriteLine(@"Elija una opción:
+                1 - Iniciar sesión
+                2 - Crear una cuenta");
+                int eleccion = int.Parse(Console.ReadLine());
+
+                switch (eleccion)
+                {
+                    case 1:
+                        if (VerificarCredenciales(manejoDataSocket))
+                        { 
+                            login = true;
+                        }
+                        break;
+                    case 2:
+                        AltaUsuario(manejoDataSocket);
+                        login = true;
+                        break;
+                    default:
+                        Console.WriteLine("Ingrese una opción válida");
+                        break;
+                }
+            }
+
+            Console.WriteLine("Escriba un mensaje para el Servidor");
             bool exit = false;
             while (!exit)
             {
@@ -79,9 +110,82 @@ namespace Cliente
             }
         }
 
+        private static bool VerificarCredenciales(ManejoSockets manejoDataSocket)
+        {
+            Console.Clear();
+            Console.WriteLine("Log in\n");
+
+            string username;
+            do
+            {
+                Console.WriteLine("Escriba el nombre de usuario");
+                username = Console.ReadLine().Trim();
+
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    Console.WriteLine("El nombre de usuario no puede estar vacío");
+                }
+            }
+            while (string.IsNullOrWhiteSpace(username));
+
+            string password;
+            do
+            {
+                Console.WriteLine("Escriba la contraseña");
+                password = Console.ReadLine().Trim();
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    Console.WriteLine("La contraseña no puede estar vacía");
+                }
+            }
+            while (string.IsNullOrWhiteSpace(password));
+
+            //Mando informacion de login
+
+            string mensaje = username + Constantes.CaracterSeparador + password;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "10" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
+
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo respuesta de login
+            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+
+            respuesta = respuesta.Substring(0, 2);
+
+            if (int.Parse(respuesta) == 12)
+            {
+                Console.WriteLine("Log in realizado con éxito");
+                return true;
+            }
+            else if (int.Parse(respuesta) == 13)
+            {
+                Console.WriteLine("Error: nombre de usuario o contraseña incorrectos");
+                return false;
+            }
+            else
+            {
+                Console.WriteLine("Error desconocido"); //Esto no se debería ejecutar nunca pero lo pongo para que c# no se queje
+                return false;
+            }
+        }
+
         private static void AltaUsuario(ManejoSockets manejoDataSocket)
         {
-            Console.WriteLine("Alta de usuario");
+            Console.Clear();
+            Console.WriteLine("Alta de usuario\n");
 
             Console.WriteLine("Escriba el nombre de usuario");
             string username = Console.ReadLine().Trim();
