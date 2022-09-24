@@ -160,7 +160,7 @@ namespace Servidor
 
             foreach (Usuario Usuario in datosServidor.Usuarios)
             {
-                mensaje += Usuario.Username + "#";
+                mensaje += Usuario.Username + Constantes.CaracterSeparadorListas;
             }
 
             byte[] encodingMensaje = Encoding.UTF8.GetBytes(mensaje);
@@ -181,7 +181,7 @@ namespace Servidor
 
         private static void DevolverHistorialChat(ManejoSockets manejoDataSocket, string cuerpo)
         {
-            string[] usuarios = cuerpo.Split('#');
+            string[] usuarios = cuerpo.Split(Constantes.CaracterSeparadorListas);
 
             HistorialChat historialDevolver = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((usuarios[0], usuarios[1])) || x.usuarios.Equals((usuarios[1], usuarios[0])));
 
@@ -199,7 +199,7 @@ namespace Servidor
 
             foreach (string chat in historialDevolver.mensajes)
             {
-                mensaje += chat + "#";
+                mensaje += chat + Constantes.CaracterSeparadorListas;
             }
 
             byte[] encodingMensaje = Encoding.UTF8.GetBytes(mensaje);
@@ -221,7 +221,7 @@ namespace Servidor
         private static void Mensajes(ManejoSockets socketCliente, string mensaje)
         {
             //[emisor, receptor, texto del mensaje]
-            string[] contenido = mensaje.Split('#');
+            string[] contenido = mensaje.Split(Constantes.CaracterSeparador);
 
             HistorialChat chatActivo = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((contenido[0], contenido[1])) || x.usuarios.Equals((contenido[1], contenido[0])));
 

@@ -39,7 +39,6 @@ namespace Cliente
             bool exit = false;
             while (!exit)
             {
-                //6 opciones
 
                 Console.WriteLine(@"Elija una opción:
                 1 - Alta de usuario
@@ -225,7 +224,8 @@ namespace Cliente
             string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
             byte[] data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
             string listaUsuarios = Encoding.UTF8.GetString(data);
-            List<string> usuarios = listaUsuarios.Split('#').ToList<string>();
+
+            List<string> usuarios = listaUsuarios.Split(Constantes.CaracterSeparadorListas).ToList<string>();
             
             usuarios.RemoveAt(usuarios.Count - 1); //El último elemento siempre es vacío por el formato con el que viene,
                                                    //entonces acá lo saco, es medio hacky pero evita que tengamos
@@ -279,7 +279,7 @@ namespace Cliente
             }
 
             //pedirle al servidor el chat con el destinatario
-            string mensaje = emisor + "#" + destinatario;
+            string mensaje = emisor + Constantes.CaracterSeparadorListas + destinatario;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string parteFija = "61" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
             encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
@@ -300,7 +300,7 @@ namespace Cliente
             respuesta = Encoding.UTF8.GetString(encodingRespuesta);
             data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
             string listaMensajes = Encoding.UTF8.GetString(data);
-            string[] mensajes = listaMensajes.Split('#');
+            string[] mensajes = listaMensajes.Split(Constantes.CaracterSeparadorListas);
 
             //Escribo mensajes anteriores
             Console.Clear();
@@ -315,7 +315,7 @@ namespace Cliente
             string textoChat = Console.ReadLine();
 
             //enviar mensaje al servidor
-            string mensajeChat = emisor + "#" + destinatario + "#" + textoChat;
+            string mensajeChat = emisor + Constantes.CaracterSeparador + destinatario + Constantes.CaracterSeparador + textoChat;
             byte[] encodingMensajeChat = Encoding.UTF8.GetBytes(mensajeChat);
             string chatParteFija = "62" + encodingMensajeChat.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
             byte[] encodingChatParteFija = Encoding.UTF8.GetBytes(chatParteFija);
