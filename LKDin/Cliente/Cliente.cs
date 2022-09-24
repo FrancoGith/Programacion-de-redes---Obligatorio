@@ -208,6 +208,7 @@ namespace Cliente
             string listaMensajes = Encoding.UTF8.GetString(data);
             string[] mensajes = listaMensajes.Split('#');
 
+            //Escribo mensajes anteriores
             Console.Clear();
             Console.WriteLine("Chat con " + destinatario);
             Console.WriteLine("-   -   -   -   -   -   -   -");
