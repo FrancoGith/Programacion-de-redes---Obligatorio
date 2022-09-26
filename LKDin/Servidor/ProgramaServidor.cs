@@ -75,10 +75,10 @@ namespace Servidor
 
                     switch (comando)
                     {
-                        case 1:
+                        case 10:
                             AltaDeUsuario(manejoDataSocket, mensajeUsuario);
                             break;
-                        case 2:
+                        case 20:
                             AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
                             break;
                         case 3:
@@ -106,8 +106,11 @@ namespace Servidor
 
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            string[] datos = mensajeUsuario.Split("#");
+            string[] datos = mensajeUsuario.Split("ϴ");
             datosServidor.Usuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
+            
+            EnviarMensajeCliente("Usuario creado", manejoDataSocket);
+            Console.WriteLine("Se ha creado un nuevo usuario");
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
@@ -124,8 +127,10 @@ namespace Servidor
             }
             List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
             string descripcion = datos[2];
-            // TODO FOTO
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion /*TODO FOTO*/});
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion});
+
+            EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket);
+            Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
         }
         
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
@@ -191,24 +196,8 @@ namespace Servidor
             {
                 respuestaUsuario = "\nNo se encontraron coincidencias\n";
             }
-
-            string mensaje = respuestaUsuario;
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = "05" + e1;
-            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
-
-            try
-            {
-                socketCliente.Send(parteFija);
-                socketCliente.Send(mensajeServidor);
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-
+            EnviarMensajeCliente(respuestaUsuario, socketCliente);
+            Console.WriteLine("Se han buscado perfiles");
         }
 
         private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente, string mensajeUsuario)
@@ -227,23 +216,8 @@ namespace Servidor
             {
                 respuestaUsuario = "\nPerfil de trabajo no existente\n";
             }
-
-            string mensaje = respuestaUsuario;
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = "50" + e1;
-            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
-
-            try
-            {
-                socketCliente.Send(parteFija);
-                socketCliente.Send(mensajeServidor);
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            EnviarMensajeCliente(respuestaUsuario, socketCliente);
+            Console.WriteLine("Se ha buscado un perfil especifico");
         }
 
         private static void Mensajes(ManejoSockets socketCliente)
@@ -265,15 +239,16 @@ namespace Servidor
         {
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+            string e2 = "00" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             try
-            { // TODO Refactor a un metodo
+            {
                 manejoDataSocket.Send(parteFija);
                 manejoDataSocket.Send(mensajeServidor);
             }
-            catch (Exception e2)
+            catch (Exception e)
             {
-                Console.WriteLine(e2);
+                Console.WriteLine(e);
             }
         }
     }

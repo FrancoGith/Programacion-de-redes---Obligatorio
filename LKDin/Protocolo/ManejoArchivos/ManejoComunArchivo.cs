@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -27,6 +28,9 @@ namespace Protocolo.ManejoArchivos
                 _socketHelper.Send(ManejoConversiones.ConvertStringToBytes(fileName));
 
                 // ---> Obtener el tamaño del archivo
+
+                // falla en el long fileSize linea 30 manejocomunarchivo
+
                 long fileSize = VerificacionExistenciaArchivos.GetFileSize(path);
                 // ---> Enviar el tamaño del archivo
                 byte[] convertedFileSize = ManejoConversiones.ConvertLongToBytes(fileSize);
