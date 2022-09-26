@@ -81,7 +81,7 @@ namespace Servidor
                         case 20:
                             AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
                             break;
-                        case 3:
+                        case 30:
                             AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente, mensajeUsuario);
                             break;
                         case 40:

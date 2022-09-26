@@ -145,11 +145,21 @@ namespace Cliente
                 return;
             }
 
-            // Error de foto!
-
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(username);
-            string e1 = "03" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e1 = "30" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
             byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
             Console.WriteLine("Ingrese la ruta completa del archivo a enviar: ");
             String abspath = Console.ReadLine();
             while (string.IsNullOrWhiteSpace(abspath))
@@ -160,6 +170,7 @@ namespace Cliente
             ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
             fileCommonHandler.SendFile(abspath);
             Console.WriteLine("Se envio el archivo al Servidor");
+
         }
 
         private static void ConsultarPerfilesExistentes(ManejoSockets manejoDataSocket)
