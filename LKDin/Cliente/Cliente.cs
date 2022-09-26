@@ -46,37 +46,43 @@ namespace Cliente
                 5 - Consultar perfil específico
                 6 - Mensajes
                 0 - Salir y desconectarse");
-
-                int opcion = int.Parse(Console.ReadLine());
-
-                switch (opcion)
+                int opcion = 9999;
+                try
                 {
-                    case 1:
-                        AltaUsuario(manejoDataSocket);
-                        break;
-                    case 2:
-                        AltaDePerfilDeTrabajo(manejoDataSocket);
-                        break;
-                    case 3:
-                        AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente);
-                        break;
-                    case 4:
-                        ConsultarPerfilesExistentes(manejoDataSocket);
-                        break;
-                    case 5:
-                        ConsultarPerfilEspecifico(manejoDataSocket);
-                        break;
-                    case 6:
-                        Mensajes(manejoDataSocket);
-                        break;
-                    case 0:
-                        exit = true;
-                        Desconexion(socketCliente);
-                        break;
-                    default:
-                        Console.WriteLine("Ingrese una opción válida");
-                        break;
+                    opcion = int.Parse(Console.ReadLine());
+                    switch (opcion)
+                    {
+                        case 1:
+                            AltaUsuario(manejoDataSocket);
+                            break;
+                        case 2:
+                            AltaDePerfilDeTrabajo(manejoDataSocket);
+                            break;
+                        case 3:
+                            AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente);
+                            break;
+                        case 4:
+                            ConsultarPerfilesExistentes(manejoDataSocket);
+                            break;
+                        case 5:
+                            ConsultarPerfilEspecifico(manejoDataSocket);
+                            break;
+                        case 6:
+                            Mensajes(manejoDataSocket);
+                            break;
+                        case 0:
+                            exit = true;
+                            Desconexion(socketCliente);
+                            break;
+                        default:
+                            Console.WriteLine("Ingrese una opción válida");
+                            break;
+                    }
                 }
+                catch (FormatException) { opcion = 9999; }
+                catch (ArgumentNullException) { opcion = 9999; }
+                catch (OverflowException) { opcion = 9999; }
+
             }
         }
 
@@ -236,7 +242,132 @@ namespace Cliente
 
         private static void Mensajes(ManejoSockets manejoDataSocket)
         {
-            throw new NotImplementedException();
+            //Solicito la lista de usuarios
+            // TODO: refactor
+
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes("600000");
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo la lista de usuarios
+            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            byte[] data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
+            string listaUsuarios = Encoding.UTF8.GetString(data);
+
+            List<string> usuarios = listaUsuarios.Split(Constantes.CaracterSeparadorListas).ToList<string>();
+
+            usuarios.RemoveAt(usuarios.Count - 1); //El último elemento siempre es vacío por el formato con el que viene,
+                                                   //entonces acá lo saco, es medio hacky pero evita que tengamos
+                                                   //que hacer try catch más adelante
+
+            Console.WriteLine("Usuarios conectados: \n");
+            for (int i = 0; i < usuarios.Count; i++)
+            {
+                Console.WriteLine(i + " - " + usuarios[i]);
+            }
+
+            string destinatario = string.Empty;
+            string emisor = string.Empty;
+            bool formatoOk = false;
+
+            Console.WriteLine("Seleccione el destinatario: ");
+            while (!formatoOk)
+            {
+                try
+                {
+                    destinatario = usuarios[int.Parse(Console.ReadLine())];
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
+
+            Console.WriteLine("\nSeleccione el emisor: ");
+            formatoOk = false;
+            while (!formatoOk)
+            {
+                try
+                {
+                    emisor = usuarios[int.Parse(Console.ReadLine())];
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
+
+            //pedirle al servidor el chat con el destinatario
+            string mensaje = emisor + Constantes.CaracterSeparadorListas + destinatario;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string parteFija = "61" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo el historial de mensajes
+            encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
+            string listaMensajes = Encoding.UTF8.GetString(data);
+            string[] mensajes = listaMensajes.Split(Constantes.CaracterSeparadorListas);
+
+            //Escribo mensajes anteriores
+            Console.Clear();
+            Console.WriteLine("Chat con " + destinatario);
+            Console.WriteLine("-   -   -   -   -   -   -   -");
+            foreach (string mensajeHistorialChat in mensajes)
+            {
+                Console.WriteLine(mensajeHistorialChat);
+            }
+
+            //Enviar un mensaje
+            string textoChat = Console.ReadLine();
+
+            //enviar mensaje al servidor
+            string mensajeChat = emisor + Constantes.CaracterSeparador + destinatario + Constantes.CaracterSeparador + textoChat;
+            byte[] encodingMensajeChat = Encoding.UTF8.GetBytes(mensajeChat);
+            string chatParteFija = "62" + encodingMensajeChat.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] encodingChatParteFija = Encoding.UTF8.GetBytes(chatParteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingChatParteFija);
+                manejoDataSocket.Send(encodingMensajeChat);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }            
 
         private static void Desconexion(Socket socketCliente)

@@ -17,6 +17,7 @@ namespace Servidor
         {
             Usuarios = new List<Usuario>();
             PerfilesTrabajo = new List<PerfilTrabajo>();
+            ListaHistoriales = new List<HistorialChat>();
         }
 
         public Usuario GetUsuario(string _username)

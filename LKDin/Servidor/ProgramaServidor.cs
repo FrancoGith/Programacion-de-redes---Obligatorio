@@ -19,7 +19,7 @@ namespace Servidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
 
-        private static DatosServidor datosServidor = new() { Usuarios = new(), ListaHistoriales = new(), PerfilesTrabajo = new() };
+        private static DatosServidor datosServidor = new DatosServidor();
         
         static void Main(string[] args)
         {
@@ -72,7 +72,7 @@ namespace Servidor
                     byte[] data = manejoDataSocket.Receive(int.Parse(parteFija.Substring(3)));
                     string mensajeUsuario = Encoding.UTF8.GetString(data);
 
-                    Console.WriteLine($"Cliente dice: {mensajeUsuario}");
+                    Console.WriteLine($"[Cliente] {mensajeUsuario}");
 
                     int comando = ObtenerComando(parteFija);
 
