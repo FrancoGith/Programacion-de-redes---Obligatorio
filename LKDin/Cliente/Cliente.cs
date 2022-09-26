@@ -283,38 +283,11 @@ namespace Cliente
 
         private static void ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, int opcion)
         {
-            byte[] parteFija = { };
-            byte[] mensajeServidor = { };
             string e1, e2;
-            
-            switch (opcion)
-            {
-                case 10:
-                    mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-                    e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = opcion.ToString() + e1;
-                    parteFija = Encoding.UTF8.GetBytes(e2);
-                    break;
-                case 20:
-                    mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-                    e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = opcion.ToString() + e1;
-                    parteFija = Encoding.UTF8.GetBytes(e2);
-                    break;
-                case 40:
-                    mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-                    e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = opcion.ToString() + e1;
-                    parteFija = Encoding.UTF8.GetBytes(e2);
-                    break;
-                case 50:
-                    mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-                    e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = opcion.ToString() + e1;
-                    parteFija = Encoding.UTF8.GetBytes(e2);
-                    break;
-            }
-
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            e2 = opcion.ToString() + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             try
             {
                 manejoDataSocket.Send(parteFija);

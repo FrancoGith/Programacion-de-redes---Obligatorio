@@ -135,7 +135,16 @@ namespace Servidor
         
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
         {
-            PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
+            PerfilTrabajo perfilUsuario;
+            try
+            {
+                perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
+                EnviarMensajeCliente("[Servidor] Usuario encontrado", manejoDataSocket);
+            } catch(Exception e)
+            {
+                EnviarMensajeCliente(e.Message, manejoDataSocket);
+                return;
+            }
             ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
             try
             {
