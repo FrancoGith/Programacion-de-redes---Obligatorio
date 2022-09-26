@@ -10,13 +10,16 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Linq;
+using Dominio.Mensajes;
 
 namespace Servidor
 {
     class ProgramaServidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-        private static DatosServidor datosServidor = new() { Usuarios = new(), PerfilesTrabajo = new() };
+
+        private static DatosServidor datosServidor = new() { Usuarios = new(), ListaHistoriales = new(), PerfilesTrabajo = new() };
         
         static void Main(string[] args)
         {
@@ -89,6 +92,15 @@ namespace Servidor
                             break;
                         case 50:
                             ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
+                            break;
+                        case 60:
+                            DevolverListaUsuarios(manejoDataSocket);
+                            break;
+                        case 61:
+                            DevolverHistorialChat(manejoDataSocket, mensajeUsuario);
+                            break;
+                        case 62:
+                            Mensajes(manejoDataSocket, mensajeUsuario);
                             break;
                         default:
                             break;
@@ -228,10 +240,79 @@ namespace Servidor
             EnviarMensajeCliente(respuestaUsuario, socketCliente);
             Console.WriteLine("Se ha buscado un perfil especifico");
         }
-
-        private static void Mensajes(ManejoSockets socketCliente)
+        
+        private static void DevolverListaUsuarios(ManejoSockets manejoDataSocket)
         {
-            throw new NotImplementedException();
+            string mensaje = "";
+
+            foreach (Usuario Usuario in datosServidor.Usuarios)
+            {
+                mensaje += Usuario.Username + Constantes.CaracterSeparadorListas;
+            }
+
+            byte[] encodingMensaje = Encoding.UTF8.GetBytes(mensaje);
+            string parteFija = "60" + encodingMensaje.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0'); ;
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(encodingMensaje);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        private static void DevolverHistorialChat(ManejoSockets manejoDataSocket, string cuerpo)
+        {
+            string[] usuarios = cuerpo.Split(Constantes.CaracterSeparadorListas);
+
+            HistorialChat historialDevolver = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((usuarios[0], usuarios[1])) || x.usuarios.Equals((usuarios[1], usuarios[0])));
+
+            if (historialDevolver == null)
+            {
+                historialDevolver = new HistorialChat
+                {
+                    usuarios = (usuarios[0], usuarios[1])
+                };
+
+                datosServidor.ListaHistoriales.Add(historialDevolver);
+            }
+
+            string mensaje = "";
+
+            foreach (string chat in historialDevolver.mensajes)
+            {
+                mensaje += chat + Constantes.CaracterSeparadorListas;
+            }
+
+            byte[] encodingMensaje = Encoding.UTF8.GetBytes(mensaje);
+            string parteFija = "60" + encodingMensaje.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0'); ;
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(encodingMensaje);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        private static void Mensajes(ManejoSockets socketCliente, string mensaje)
+        {
+            //[emisor, receptor, texto del mensaje]
+            string[] contenido = mensaje.Split(Constantes.CaracterSeparador);
+
+            HistorialChat chatActivo = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((contenido[0], contenido[1])) || x.usuarios.Equals((contenido[1], contenido[0])));
+
+            chatActivo.mensajes.Add(contenido[0] + " dice: " + contenido[2]);
         }
 
         private static int ObtenerComando(string mensajeUsuario)
