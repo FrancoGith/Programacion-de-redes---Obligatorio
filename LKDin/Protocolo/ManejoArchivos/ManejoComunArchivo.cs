@@ -27,6 +27,9 @@ namespace Protocolo.ManejoArchivos
                 _socketHelper.Send(ManejoConversiones.ConvertStringToBytes(fileName));
 
                 // ---> Obtener el tamaño del archivo
+
+                // falla en el long fileSize linea 30 manejocomunarchivo
+
                 long fileSize = VerificacionExistenciaArchivos.GetFileSize(path);
                 // ---> Enviar el tamaño del archivo
                 byte[] convertedFileSize = ManejoConversiones.ConvertLongToBytes(fileSize);

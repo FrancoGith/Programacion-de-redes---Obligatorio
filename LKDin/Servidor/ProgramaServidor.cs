@@ -1,8 +1,9 @@
-using Dominio;
+﻿using Dominio;
 using Protocolo;
 using Protocolo.ManejoArchivos;
 using System;
 using System.Data;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
@@ -17,10 +18,18 @@ namespace Servidor
     class ProgramaServidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-        private static DatosServidor datosServidor = new() { Usuarios = new(), ListaHistoriales = new() };
+
+        private static DatosServidor datosServidor = new() { Usuarios = new(), ListaHistoriales = new(), PerfilesTrabajo = new() };
         
         static void Main(string[] args)
         {
+
+            List<string> hab = new() { "LoL", "Programacion" };
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 1" }, Descripcion = "Me falta pala", Habilidades = hab });
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 2" }, Descripcion = "Se muchas cosas", Habilidades = hab });
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 3" }, Descripcion = "Bases", Habilidades = hab });
+
+
             Console.WriteLine("Levantando Servidor");
 
             string serverIP = settingsManager.ReadSettings(ServerConfig.serverIPconfigKey);
@@ -69,14 +78,20 @@ namespace Servidor
 
                     switch (comando)
                     {
-                        case 1:
+                        case 10:
                             AltaDeUsuario(manejoDataSocket, mensajeUsuario);
                             break;
-                        case 2:
+                        case 20:
                             AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
                             break;
-                        case 3:
+                        case 30:
                             AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente, mensajeUsuario);
+                            break;
+                        case 40:
+                            ConsultarPerfilesExistentes(manejoDataSocket, mensajeUsuario);
+                            break;
+                        case 50:
+                            ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
                             break;
                         case 60:
                             DevolverListaUsuarios(manejoDataSocket);
@@ -87,7 +102,6 @@ namespace Servidor
                         case 62:
                             Mensajes(manejoDataSocket, mensajeUsuario);
                             break;
-
                         default:
                             break;
                     }
@@ -104,8 +118,11 @@ namespace Servidor
 
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            string[] datos = mensajeUsuario.Split("#");
+            string[] datos = mensajeUsuario.Split("ϴ");
             datosServidor.Usuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
+            
+            EnviarMensajeCliente("Usuario creado", manejoDataSocket);
+            Console.WriteLine("Se ha creado un nuevo usuario");
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
@@ -122,13 +139,24 @@ namespace Servidor
             }
             List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
             string descripcion = datos[2];
-            // TODO FOTO
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion /*TODO FOTO*/});
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion});
+
+            EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket);
+            Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
         }
         
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
         {
-            PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
+            PerfilTrabajo perfilUsuario;
+            try
+            {
+                perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
+                EnviarMensajeCliente("[Servidor] Usuario encontrado", manejoDataSocket);
+            } catch(Exception e)
+            {
+                EnviarMensajeCliente(e.Message, manejoDataSocket);
+                return;
+            }
             ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
             try
             {
@@ -143,17 +171,76 @@ namespace Servidor
             Console.WriteLine("Se ha recibido un archivo");
         }
 
-        private static void ConsultarPerfilesExistentes(Socket socketCliente)
+        private static void ConsultarPerfilesExistentes(ManejoSockets socketCliente, string mensajeUsuario)
         {
-            throw new NotImplementedException();
-        }
-        
-        private static void ConsultarPerfilEspecifico(Socket socketCliente)
-        {
-            throw new NotImplementedException();
-        }
-        
+            string[] datos = mensajeUsuario.Split("ϴ");
 
+            List<string> habilidades = datos[0].Split(" ").ToList();
+            habilidades = habilidades.Select(habilidad => habilidad.ToUpper()).ToList();
+
+            List<string> palabras = datos[1].Split(" ").ToList();
+            palabras = palabras.Select(palabra => palabra.ToUpper()).ToList();
+
+            List<string> usuariosEncontrados = new();
+
+            foreach (var perfil in datosServidor.PerfilesTrabajo)
+            {
+                List<string> infoPerfil = perfil.GetSearchData().Split(" ").ToList();
+                infoPerfil = infoPerfil.Select(info => info.ToUpper()).ToList();
+                foreach (string info in infoPerfil)
+                {
+                    if (habilidades.Contains(info) || palabras.Contains(info))
+                    {
+                        if (!usuariosEncontrados.Contains(perfil.Usuario.Username))
+                        {
+                            usuariosEncontrados.Add(perfil.Usuario.Username);
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine("Se termino la busqueda de usuarios");
+
+            string respuestaUsuario = "";
+            if (usuariosEncontrados.Count != 0)
+            {
+                respuestaUsuario = "Usuarios encontrados: ";
+                foreach (string nombreUsuario in usuariosEncontrados)
+                {
+                    PerfilTrabajo perfilTrabajo = ObtenerPerfilTrabajo(nombreUsuario);
+                    string habilidadesPerfil = string.Join("-", perfilTrabajo.Habilidades);
+                    string resumenPerfil = $"\n    Nombre: {perfilTrabajo.Usuario.Username}\n    Descripción: {perfilTrabajo.Descripcion}\n    Habilidades: {habilidadesPerfil}\n";
+                    respuestaUsuario = $"{respuestaUsuario} \n {resumenPerfil}";
+                }
+            }
+            else
+            {
+                respuestaUsuario = "\nNo se encontraron coincidencias\n";
+            }
+            EnviarMensajeCliente(respuestaUsuario, socketCliente);
+            Console.WriteLine("Se han buscado perfiles");
+        }
+
+        private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente, string mensajeUsuario)
+        {
+            string[] datos = mensajeUsuario.Split("ϴ");
+
+            PerfilTrabajo usuarioEncontrado = datosServidor.PerfilesTrabajo.FirstOrDefault(usuario => usuario.Usuario.Username == datos[0]);
+
+            string respuestaUsuario = "";
+            if (usuarioEncontrado != null)
+            {
+                string habilidades = string.Join("-", usuarioEncontrado.Habilidades);
+                respuestaUsuario = $"\nUsuario encontrado\n    Nombre: {usuarioEncontrado.Usuario.Username}\n    Descripción: {usuarioEncontrado.Descripcion}\n    Habilidades: {habilidades}\n";
+            }
+            else
+            {
+                respuestaUsuario = "\nPerfil de trabajo no existente\n";
+            }
+            EnviarMensajeCliente(respuestaUsuario, socketCliente);
+            Console.WriteLine("Se ha buscado un perfil especifico");
+        }
+        
         private static void DevolverListaUsuarios(ManejoSockets manejoDataSocket)
         {
             string mensaje = "";
@@ -233,19 +320,25 @@ namespace Servidor
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
         }
 
+        private static PerfilTrabajo ObtenerPerfilTrabajo(string nombreUsuario)
+        {
+            return datosServidor.PerfilesTrabajo.FirstOrDefault(perfil => perfil.Usuario.Username == nombreUsuario);
+        }
+        
         private static void EnviarMensajeCliente(string mensaje, ManejoSockets manejoDataSocket)
         {
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+            string e2 = "00" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             try
-            { // TODO Refactor a un metodo
+            {
                 manejoDataSocket.Send(parteFija);
                 manejoDataSocket.Send(mensajeServidor);
             }
-            catch (Exception e2)
+            catch (Exception e)
             {
-                Console.WriteLine(e2);
+                Console.WriteLine(e);
             }
         }
     }
