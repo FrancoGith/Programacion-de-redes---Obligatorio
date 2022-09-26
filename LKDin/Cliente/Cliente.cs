@@ -99,8 +99,8 @@ namespace Cliente
                 Console.WriteLine("La contraseña no puede estar vacía");
                 return;
             }
-            List<List<string>> informacion = new() { new() { username, password } };
-            ComunicacionServidorCliente(manejoDataSocket, informacion, 10);
+            string mensaje = username + "ϴ" + password;
+            ComunicacionServidorCliente(manejoDataSocket, mensaje, 10);
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
@@ -129,9 +129,8 @@ namespace Cliente
             mensaje = mensaje.Remove(mensaje.Length-1, 1);
             mensaje += Constantes.CaracterSeparador;
             mensaje += descripcion + Constantes.CaracterSeparador;
-
-            List<List<string>> informacion = new() { new() { mensaje } };
-            ComunicacionServidorCliente(manejoDataSocket, informacion, 20);
+            
+            ComunicacionServidorCliente(manejoDataSocket, mensaje, 20);
         }
 
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente)
@@ -212,8 +211,8 @@ namespace Cliente
                     Console.WriteLine("Solo se permiten opciones");
                 }
             }
-            List<List<string>> informacion = new() { habilidades, palabrasDescripcion };
-            ComunicacionServidorCliente(manejoDataSocket, informacion, 40);
+            string mensaje = string.Join(" ", habilidades) + "ϴ" + string.Join(" ", palabrasDescripcion);
+            ComunicacionServidorCliente(manejoDataSocket, mensaje, 40);
         }
 
         private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket)
@@ -232,8 +231,7 @@ namespace Cliente
                     break;
                 }
             }
-            List<List<string>> informacion = new() { new() { usuarioBuscar } };
-            ComunicacionServidorCliente(manejoDataSocket, informacion, 50);
+            ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50);
         }
 
         private static void Mensajes(ManejoSockets manejoDataSocket)
@@ -283,9 +281,8 @@ namespace Cliente
             return palabras;
         }
 
-        private static void ComunicacionServidorCliente(ManejoSockets manejoDataSocket, List<List<string>> informacion, int opcion)
+        private static void ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, int opcion)
         {
-            string mensaje;
             byte[] parteFija = { };
             byte[] mensajeServidor = { };
             string e1, e2;
@@ -293,31 +290,27 @@ namespace Cliente
             switch (opcion)
             {
                 case 10:
-                    mensaje = informacion[0][0] + "ϴ" + informacion[0][1];
                     mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
                     e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = "10" + e1;
+                    e2 = opcion.ToString() + e1;
                     parteFija = Encoding.UTF8.GetBytes(e2);
                     break;
                 case 20:
-                    mensaje = informacion[0][0];
                     mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
                     e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = "20" + e1;
+                    e2 = opcion.ToString() + e1;
                     parteFija = Encoding.UTF8.GetBytes(e2);
                     break;
                 case 40:
-                    mensaje = string.Join(" ", informacion[0]) + "ϴ" + string.Join(" ", informacion[0]);
                     mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
                     e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = "40" + e1;
+                    e2 = opcion.ToString() + e1;
                     parteFija = Encoding.UTF8.GetBytes(e2);
                     break;
                 case 50:
-                    mensaje = informacion[0][0];
                     mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
                     e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-                    e2 = "50" + e1;
+                    e2 = opcion.ToString() + e1;
                     parteFija = Encoding.UTF8.GetBytes(e2);
                     break;
             }
