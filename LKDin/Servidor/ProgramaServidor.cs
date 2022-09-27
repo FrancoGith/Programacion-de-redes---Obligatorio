@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Linq;
 using Dominio.Mensajes;
+using System.Security.Policy;
 
 namespace Servidor
 {
@@ -93,6 +94,9 @@ namespace Servidor
                         case 50:
                             ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
                             break;
+                        case 51:
+                            EnviarImagenPerfilEspecifico(manejoDataSocket, socketCliente, mensajeUsuario);
+                            break;
                         case 60:
                             DevolverListaUsuarios(manejoDataSocket);
                             break;
@@ -113,8 +117,6 @@ namespace Servidor
             }
             Console.WriteLine("Cliente desconectado");
         }
-
-        
 
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
@@ -233,7 +235,7 @@ namespace Servidor
             if (usuarioEncontrado != null)
             {
                 string habilidades = string.Join("-", usuarioEncontrado.Habilidades);
-                respuestaUsuario = $"\nUsuario encontrado\n    Nombre: {usuarioEncontrado.Usuario.Username}\n    Descripción: {usuarioEncontrado.Descripcion}\n    Habilidades: {habilidades}\n";
+                respuestaUsuario = $"\nUsuario encontrado\n    Nombre: {usuarioEncontrado.Usuario.Username}\n    Descripción: {usuarioEncontrado.Descripcion}\n    Habilidades: {habilidades}\n    Imagen: {usuarioEncontrado.Foto}\n";
             }
             else
             {
@@ -241,6 +243,23 @@ namespace Servidor
             }
             EnviarMensajeCliente(respuestaUsuario, socketCliente);
             Console.WriteLine("Se ha buscado un perfil especifico");
+
+        }
+
+        private static void EnviarImagenPerfilEspecifico(ManejoSockets manejoDataSocket,Socket socketCliente, string nombreUsuario)
+        {
+            PerfilTrabajo perfil = datosServidor.GetPerfilTrabajo(nombreUsuario);
+            if (perfil.Foto != null)
+            {
+                string pathApp = String.Empty; // TODO conseguir ruta a la aplicacion
+                string absPath = pathApp + perfil.Foto;
+                EnviarMensajeCliente("Ok", manejoDataSocket);
+                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
+                fileCommonHandler.SendFile(absPath);
+            } else
+            {
+                EnviarMensajeCliente("Error", manejoDataSocket);
+            }
         }
         
         private static void DevolverListaUsuarios(ManejoSockets manejoDataSocket)
