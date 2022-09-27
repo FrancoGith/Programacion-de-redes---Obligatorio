@@ -158,9 +158,11 @@ namespace Servidor
                 return;
             }
             ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
+            string nombreArchivo = $"foto{nombreUsuario}";
             try
             {
-                perfilUsuario.Foto = manejo.RecibirArchivo();
+                manejo.RecibirArchivo(nombreArchivo);
+                perfilUsuario.Foto = nombreArchivo;
             } catch (Exception e)
             {
                 EnviarMensajeCliente(e.Message, manejoDataSocket);
