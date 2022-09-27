@@ -20,12 +20,12 @@ namespace Protocolo.ManejoArchivos
         {
             if (VerificacionExistenciaArchivos.FileExists(path))
             {
-                //string fileName = VerificacionExistenciaArchivos.GetFileName(path);
-                //---------------- No envio el nombre del archivo porque igual lo voy a sobrescribir en el servidor
+                string fileName = VerificacionExistenciaArchivos.GetFileName(path);
+                //---------------- Solo envio el nombre porque necesito la extension
                 // ---> Enviar el largo del nombre del archivo
-                //_socketHelper.Send(ManejoConversiones.ConvertIntToBytes(fileName.Length));
+                _socketHelper.Send(ManejoConversiones.ConvertIntToBytes(fileName.Length));
                 // ---> Enviar el nombre del archivo
-                //_socketHelper.Send(ManejoConversiones.ConvertStringToBytes(fileName));
+                _socketHelper.Send(ManejoConversiones.ConvertStringToBytes(fileName));
 
                 // ---> Obtener el tamaño del archivo
 
@@ -48,15 +48,16 @@ namespace Protocolo.ManejoArchivos
         {
             // --------------------------------------------------No me importa el nombre porque lo sobrescribo
             // ---> Recibir el largo del nombre del archivo
-            //int fileNameSize = ManejoConversiones.ConvertBytesToInt(
-            //_socketHelper.Receive(ManejoTamanoArchivos.FixedDataSize));
+            int fileNameSize = ManejoConversiones.ConvertBytesToInt(
+            _socketHelper.Receive(ManejoTamanoArchivos.FixedDataSize));
             // ---> Recibir el nombre del archivo
-            // string fileName = ManejoConversiones.ConvertBytesToString(_socketHelper.Receive(fileNameSize));
+             string fileName = ManejoConversiones.ConvertBytesToString(_socketHelper.Receive(fileNameSize));
             // ---> Recibir el largo del archivo
+            string extension = Path.GetExtension(fileName);
             long fileSize = ManejoConversiones.ConvertBytesToLong(
             _socketHelper.Receive(ManejoTamanoArchivos.FixedFileSize));
             // ---> Recibir el archivo
-            ReceiveFileWithStreams(fileSize, _nombreArchivo);
+            ReceiveFileWithStreams(fileSize, (_nombreArchivo + extension));
         }
 
         private void SendFileWithStream(long fileSize, string path)
