@@ -78,6 +78,9 @@ namespace Servidor
 
                     switch (comando)
                     {
+                        case 1:
+                            LogIn(manejoDataSocket, mensajeUsuario);
+                            break;
                         case 10:
                             AltaDeUsuario(manejoDataSocket, mensajeUsuario);
                             break;
@@ -171,6 +174,32 @@ namespace Servidor
             }
             EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket);
             Console.WriteLine("Se ha recibido un archivo");
+        }
+
+        private static void LogIn(ManejoSockets manejoDataSocket, string mensaje)
+        {
+            string[] datos = mensaje.Split(Constantes.CaracterSeparador);
+
+            Usuario usuarioLogIn = datosServidor.Usuarios.FirstOrDefault(x => x.Username == datos[0]);
+
+            string codigo = "030000";
+
+            if (usuarioLogIn != null && usuarioLogIn.Password == datos[1])
+            {
+                codigo = "020000";
+            }
+
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes(codigo);
+
+            try
+            {
+                manejoDataSocket.Send(encodingParteFija);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private static void ConsultarPerfilesExistentes(ManejoSockets socketCliente, string mensajeUsuario)
