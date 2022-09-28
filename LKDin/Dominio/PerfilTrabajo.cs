@@ -12,6 +12,13 @@ namespace Dominio
         public List<string> Habilidades { get; set; }
         public string Descripcion { get; set; }
         public string Foto { get; set; }
+        public PerfilTrabajo()
+        {
+            Usuario = new Usuario();
+            Habilidades = new List<string>();
+            Descripcion = String.Empty;
+            Foto = String.Empty;
+        }
 
         public string GetSearchData()
         {

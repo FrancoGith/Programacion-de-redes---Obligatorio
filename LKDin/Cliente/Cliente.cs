@@ -100,7 +100,7 @@ namespace Cliente
                             ConsultarPerfilesExistentes(manejoDataSocket);
                             break;
                         case 5:
-                            ConsultarPerfilEspecifico(manejoDataSocket);
+                            ConsultarPerfilEspecifico(manejoDataSocket, socketCliente);
                             break;
                         case 6:
                             Mensajes(manejoDataSocket, username);
@@ -119,6 +119,7 @@ namespace Cliente
                 catch (OverflowException) { opcion = 9999; }
 
             }
+            
         }
 
         private static (bool,string) VerificarCredenciales(ManejoSockets manejoDataSocket)
@@ -259,20 +260,7 @@ namespace Cliente
                 return;
             }
 
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(username);
-            string e1 = "30" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
-
-            try
-            {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensajeServidor);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            ComunicacionServidorCliente(manejoDataSocket, username, 30);
 
             Console.WriteLine("Ingrese la ruta completa del archivo a enviar: ");
             String abspath = Console.ReadLine();
@@ -282,9 +270,15 @@ namespace Cliente
                 abspath = Console.ReadLine();
             }
             ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
-            fileCommonHandler.SendFile(abspath);
+            try
+            {
+                fileCommonHandler.SendFile(abspath);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Debe ingresar una ruta valida. Intente nuevamente:");
+            }
             Console.WriteLine("Se envio el archivo al Servidor");
-
         }
 
         private static void ConsultarPerfilesExistentes(ManejoSockets manejoDataSocket)
@@ -330,7 +324,7 @@ namespace Cliente
             ComunicacionServidorCliente(manejoDataSocket, mensaje, 40);
         }
 
-        private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket)
+        private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket, Socket socket)
         {
             Console.WriteLine("Consultar perfil especifico");
 
@@ -346,7 +340,22 @@ namespace Cliente
                     break;
                 }
             }
-            ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50);
+            if (ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50) == "\nPerfil de trabajo no existente\n") return;
+
+            Console.WriteLine("Desea descargar la imagen de perfil (y/n)");
+            string siNo = Console.ReadLine();
+            if(siNo == "y")
+            {
+                string[] respuesta = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 51).Split(Constantes.CaracterSeparador);
+                if (respuesta[0] == "Ok")
+                {
+                    ManejoComunArchivo manejo = new ManejoComunArchivo(socket);
+                    manejo.RecibirArchivo(respuesta[1]);
+                }
+            } else
+            {
+                return;
+            }
         }
 
         private static void Mensajes(ManejoSockets manejoDataSocket, string emisor)
@@ -502,7 +511,7 @@ namespace Cliente
             return palabras;
         }
 
-        private static void ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, int opcion)
+        private static string ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, int opcion)
         {
             string e1, e2;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
@@ -520,6 +529,7 @@ namespace Cliente
                 string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
 
                 Console.WriteLine(mensajeUsuarioRespuesta);
+                return mensajeUsuarioRespuesta;
             }
             catch (Exception e)
             {
