@@ -47,25 +47,32 @@ namespace Cliente
                 Console.WriteLine(@"Elija una opción:
                 1 - Iniciar sesión
                 2 - Crear una cuenta");
-                int eleccion = int.Parse(Console.ReadLine());
-                (bool, string) verificacion;
+                try
+                { 
+                    int eleccion = int.Parse(Console.ReadLine());
+                    (bool, string) verificacion;
 
-                switch (eleccion)
+                    switch (eleccion)
+                    {
+                        case 1:
+                            verificacion = VerificarCredenciales(manejoDataSocket);
+
+                            login = verificacion.Item1;
+                            username = verificacion.Item2;
+                            break;
+                        case 2:
+                            verificacion = AltaUsuario(manejoDataSocket);
+                            login = verificacion.Item1;
+                            username = verificacion.Item2;
+                            break;
+                        default:
+                            Console.WriteLine("Ingrese una opción válida");
+                            break;
+                    }
+                }
+                catch (Exception)
                 {
-                    case 1:
-                        verificacion = VerificarCredenciales(manejoDataSocket);
-
-                        login = verificacion.Item1;
-                        username = verificacion.Item2;
-                        break;
-                    case 2:
-                        verificacion = AltaUsuario(manejoDataSocket);
-                        login = verificacion.Item1;
-                        username = verificacion.Item2;
-                        break;
-                    default:
-                        Console.WriteLine("Ingrese una opción válida");
-                        break;
+                    Console.WriteLine("Ingrese una opción válida");
                 }
             }
 
@@ -214,9 +221,28 @@ namespace Cliente
                 Console.WriteLine("La contraseña no puede estar vacía");
                 return (false, "");
             }
+
             string mensaje = username + "ϴ" + password;
-            ComunicacionServidorCliente(manejoDataSocket, mensaje, 10);
-            return (true, username);
+            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, 10);
+            respuesta = respuesta.Substring(0, 2);
+
+            if (int.Parse(respuesta) == 12)
+            {
+                Console.WriteLine("Error: usuario existente");
+                return (false, "");
+            }
+            else if (int.Parse(respuesta) == 11)
+            {
+                Console.WriteLine("Creacion de usuario realizada con éxito");
+                return (true, username);
+            }
+            else
+            {
+                Console.WriteLine("Error desconocido"); //Esto no se debería ejecutar nunca pero lo pongo para que c# no se queje
+                return (false, "");
+            }
+
+            /*return (true, username);*/
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
@@ -260,13 +286,26 @@ namespace Cliente
                 return;
             }
 
-            ComunicacionServidorCliente(manejoDataSocket, username, 30);
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(username);
+            string e1 = "30" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
+
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
 
 
             byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
             string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
             int nroRespuesta = int.Parse(respuesta.Substring(0, 2));
-            
+
             if (nroRespuesta == 32)
             {
                 Console.WriteLine("El usuario no existe, ingrese nuevamente");
@@ -345,13 +384,14 @@ namespace Cliente
                     break;
                 }
             }
-            if (ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50) == "\nPerfil de trabajo no existente\n") return;
+            string respuestaServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50);
+            if (respuestaServidor.Substring(3) == "\nPerfil de trabajo no existente\n") return;
 
             Console.WriteLine("Desea descargar la imagen de perfil (y/n)");
             string siNo = Console.ReadLine();
             if(siNo == "y")
             {
-                string[] respuesta = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 51).Split(Constantes.CaracterSeparador);
+                string[] respuesta = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 51).Substring(3).Split(Constantes.CaracterSeparador);
                 if (respuesta[0] == "Ok")
                 {
                     ManejoComunArchivo manejo = new ManejoComunArchivo(socket);
@@ -534,7 +574,7 @@ namespace Cliente
                 string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
 
                 Console.WriteLine(mensajeUsuarioRespuesta);
-                return mensajeUsuarioRespuesta;
+                return parteFijaRespuesta.Substring(0, 2) + ":" + mensajeUsuarioRespuesta;
             }
             catch (Exception e)
             {

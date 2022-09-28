@@ -24,13 +24,13 @@ namespace Servidor
         
         static void Main(string[] args)
         {
-            /*datosServidor.AgregarUsuario("U1", "U1");
+            datosServidor.AgregarUsuario("U1", "U1");
             datosServidor.AgregarUsuario("U2", "U2");
             datosServidor.AgregarUsuario("U3", "U3");
 
             datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U1"), new List<string>() { "C#", "Java" }, "Programador");
             datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U2"), new List<string>() { "Python" }, "Backend");
-            datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U3"), new List<string>() { "Java" }, "QA");*/
+            datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U3"), new List<string>() { "Java" }, "QA");
 
             Console.WriteLine("Levantando Servidor");
 
@@ -128,16 +128,16 @@ namespace Servidor
 
             if (datosServidor.GetUsuario(datos[0]) != null)
             {
-                EnviarMensajeCliente("Usuario existente, intente con otro nombre.", manejoDataSocket);
+                EnviarMensajeCliente("Usuario existente, intente con otro nombre.", manejoDataSocket, "12");
                 Console.WriteLine("No se ha ingresado el usuario porque ya existia");
             }
             else
             {
                 datosServidor.AgregarUsuario(datos[0], datos[1]);
-                EnviarMensajeCliente("Usuario creado", manejoDataSocket);
+                EnviarMensajeCliente("Usuario creado", manejoDataSocket, "11");
                 Console.WriteLine("Se ha creado un nuevo usuario");
             }
-        }
+        }   
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
@@ -157,7 +157,7 @@ namespace Servidor
 
             datosServidor.AgregarPerfilTrabajo(usuario, habilidades, descripcion);
 
-            EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket);
+            EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket, "00");
             Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
         }
 
@@ -184,19 +184,19 @@ namespace Servidor
 
             if (codigo == "310000")
             {
-                // seba
                 ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
                 string nombreArchivo = $"imagenes\\foto{nombreUsuario}";
                 try
                 {
                     perfilUsuario.Foto = manejo.RecibirArchivo(nombreArchivo);
-                } catch (Exception e)
+                } 
+                catch (Exception e)
                 {
-                    EnviarMensajeCliente(e.Message, manejoDataSocket);
+                    EnviarMensajeCliente(e.Message, manejoDataSocket, "00");
                     Console.WriteLine("Ocurrio un error al recibir un archivo");
                     return;
                 }
-                EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket);
+                EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket, "00");
                 Console.WriteLine("Se ha recibido un archivo");
             }
             else
@@ -277,7 +277,7 @@ namespace Servidor
             {
                 respuestaUsuario = "\nNo se encontraron coincidencias\n";
             }
-            EnviarMensajeCliente(respuestaUsuario, socketCliente);
+            EnviarMensajeCliente(respuestaUsuario, socketCliente, "00");
             Console.WriteLine("Se han buscado perfiles");
         }
 
@@ -297,7 +297,7 @@ namespace Servidor
             {
                 respuestaUsuario = "\nPerfil de trabajo no existente\n";
             }
-            EnviarMensajeCliente(respuestaUsuario, socketCliente);
+            EnviarMensajeCliente(respuestaUsuario, socketCliente, "00");
             Console.WriteLine("Se ha buscado un perfil especifico");
 
         }
@@ -310,7 +310,7 @@ namespace Servidor
                 perfil = datosServidor.GetPerfilTrabajo(nombreUsuario);
             } catch(Exception e)
             {
-                EnviarMensajeCliente("Perfil de trabajo no existente", manejoDataSocket);
+                EnviarMensajeCliente("Perfil de trabajo no existente", manejoDataSocket, "00");
                 Console.WriteLine(e.Message);
                 return;
             }
@@ -319,12 +319,12 @@ namespace Servidor
                 string pathApp = Directory.GetCurrentDirectory();
                 string absPath = Path.Combine(pathApp, perfil.Foto);
                 string nombreArchivo = "imagenes\\" + Path.GetFileNameWithoutExtension(perfil.Foto);
-                EnviarMensajeCliente("Ok" + Constantes.CaracterSeparador + nombreArchivo, manejoDataSocket);
+                EnviarMensajeCliente("Ok" + Constantes.CaracterSeparador + nombreArchivo, manejoDataSocket, "00");
                 ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
                 fileCommonHandler.SendFile(absPath);
             } else
             {
-                EnviarMensajeCliente("Este perfil de trabajo no tiene ninguna foto asociada", manejoDataSocket);
+                EnviarMensajeCliente("Este perfil de trabajo no tiene ninguna foto asociada", manejoDataSocket, "00");
             }
         }
         
@@ -407,11 +407,11 @@ namespace Servidor
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
         }
         
-        private static void EnviarMensajeCliente(string mensaje, ManejoSockets manejoDataSocket)
+        private static void EnviarMensajeCliente(string mensaje, ManejoSockets manejoDataSocket, string code)
         {
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = "00" + e1;
+            string e2 = code + e1;
             byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             try
             {
