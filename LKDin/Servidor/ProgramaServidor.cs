@@ -69,7 +69,7 @@ namespace Servidor
 
                     switch (comando)
                     {
-                        case 1:
+                        case 10:
                             AltaDeUsuario(manejoDataSocket, mensajeUsuario);
                             break;
                         case 2:
@@ -78,7 +78,7 @@ namespace Servidor
                         case 3:
                             AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente, mensajeUsuario);
                             break;
-                        case 10:
+                        case 1:
                             LogIn(manejoDataSocket, mensajeUsuario);
                             break;
                         case 60:
@@ -152,11 +152,11 @@ namespace Servidor
 
             Usuario usuarioLogIn = datosServidor.Usuarios.FirstOrDefault(x => x.Username == datos[0]);
 
-            string codigo = "130000";
+            string codigo = "030000";
 
             if (usuarioLogIn != null && usuarioLogIn.Password == datos[1])
             {
-                codigo = "120000";
+                codigo = "020000";
             }
 
             byte[] encodingParteFija = Encoding.UTF8.GetBytes(codigo);

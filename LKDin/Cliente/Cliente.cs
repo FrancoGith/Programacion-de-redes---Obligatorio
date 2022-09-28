@@ -145,7 +145,7 @@ namespace Cliente
             string mensaje = username + Constantes.CaracterSeparador + password;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
             string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = "10" + e1;
+            string e2 = "01" + e1;
             byte[] parteFija = Encoding.UTF8.GetBytes(e2);
 
             try
@@ -165,12 +165,12 @@ namespace Cliente
 
             respuesta = respuesta.Substring(0, 2);
 
-            if (int.Parse(respuesta) == 12)
+            if (int.Parse(respuesta) == 2)
             {
                 Console.WriteLine("Log in realizado con éxito");
                 return true;
             }
-            else if (int.Parse(respuesta) == 13)
+            else if (int.Parse(respuesta) == 3)
             {
                 Console.WriteLine("Error: nombre de usuario o contraseña incorrectos");
                 return false;
