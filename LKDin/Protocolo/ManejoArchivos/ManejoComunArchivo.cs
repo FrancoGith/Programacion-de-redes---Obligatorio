@@ -44,7 +44,7 @@ namespace Protocolo.ManejoArchivos
             }
         }
 
-        public void RecibirArchivo(string _nombreArchivo)
+        public string RecibirArchivo(string _nombreArchivo)
         {
             // --------------------------------------------------No me importa el nombre porque lo sobrescribo
             // ---> Recibir el largo del nombre del archivo
@@ -57,7 +57,9 @@ namespace Protocolo.ManejoArchivos
             long fileSize = ManejoConversiones.ConvertBytesToLong(
             _socketHelper.Receive(ManejoTamanoArchivos.FixedFileSize));
             // ---> Recibir el archivo
-            ReceiveFileWithStreams(fileSize, (_nombreArchivo + extension));
+            string archivoAGuardar = _nombreArchivo + extension;
+            ReceiveFileWithStreams(fileSize, archivoAGuardar);
+            return archivoAGuardar;
         }
 
         private void SendFileWithStream(long fileSize, string path)

@@ -32,7 +32,6 @@ namespace Protocolo.ManejoArchivos
 
         public static void Write(string fileName, byte[] data)
         {
-            fileName = $"imagenes/{fileName}";
             var fileMode = VerificacionExistenciaArchivos.FileExists(fileName) ? FileMode.Append : FileMode.Create;
             Directory.CreateDirectory(Path.GetDirectoryName(fileName));
             using var fs = new FileStream(fileName, fileMode);

@@ -10,9 +10,9 @@ namespace Servidor
 {
     public class DatosServidor
     {
-        public List<Usuario>? Usuarios { get; set; }
-        public List<PerfilTrabajo>? PerfilesTrabajo { get; set; }
-        public List<HistorialChat>? ListaHistoriales { get; set; }
+        public List<Usuario> Usuarios { get; set; }
+        public List<PerfilTrabajo> PerfilesTrabajo { get; set; }
+        public List<HistorialChat> ListaHistoriales { get; set; }
         public DatosServidor()
         {
             Usuarios = new List<Usuario>();

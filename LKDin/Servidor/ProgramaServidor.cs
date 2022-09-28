@@ -26,7 +26,7 @@ namespace Servidor
         {
 
             List<string> hab = new() { "LoL", "Programacion" };
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 1" }, Descripcion = "Me falta pala", Habilidades = hab });
+            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 1" }, Descripcion = "Me falta pala", Habilidades = hab , Foto = "imagenes\\fotoUsuario 1.png"});
             datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 2" }, Descripcion = "Se muchas cosas", Habilidades = hab });
             datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 3" }, Descripcion = "Bases", Habilidades = hab });
 
@@ -160,11 +160,10 @@ namespace Servidor
                 return;
             }
             ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
-            string nombreArchivo = $"foto{nombreUsuario}";
+            string nombreArchivo = $"imagenes\\foto{nombreUsuario}";
             try
             {
-                manejo.RecibirArchivo(nombreArchivo);
-                perfilUsuario.Foto = nombreArchivo;
+                perfilUsuario.Foto = manejo.RecibirArchivo(nombreArchivo);
             } catch (Exception e)
             {
                 EnviarMensajeCliente(e.Message, manejoDataSocket);
@@ -227,7 +226,7 @@ namespace Servidor
 
         private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente, string mensajeUsuario)
         {
-            string[] datos = mensajeUsuario.Split("ϴ");
+            string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
 
             PerfilTrabajo usuarioEncontrado = datosServidor.PerfilesTrabajo.FirstOrDefault(usuario => usuario.Usuario.Username == datos[0]);
 
@@ -248,17 +247,27 @@ namespace Servidor
 
         private static void EnviarImagenPerfilEspecifico(ManejoSockets manejoDataSocket,Socket socketCliente, string nombreUsuario)
         {
-            PerfilTrabajo perfil = datosServidor.GetPerfilTrabajo(nombreUsuario);
-            if (perfil.Foto != null)
+            PerfilTrabajo perfil;
+            try
             {
-                string pathApp = String.Empty; // TODO conseguir ruta a la aplicacion
-                string absPath = pathApp + perfil.Foto;
-                EnviarMensajeCliente("Ok", manejoDataSocket);
+                perfil = datosServidor.GetPerfilTrabajo(nombreUsuario);
+            } catch(Exception e)
+            {
+                EnviarMensajeCliente("Perfil de trabajo no existente", manejoDataSocket);
+                Console.WriteLine(e.Message);
+                return;
+            }
+            if (perfil.Foto != String.Empty)
+            {
+                string pathApp = Directory.GetCurrentDirectory();
+                string absPath = Path.Combine(pathApp, perfil.Foto);
+                string nombreArchivo = "imagenes\\" + Path.GetFileNameWithoutExtension(perfil.Foto);
+                EnviarMensajeCliente("Ok" + Constantes.CaracterSeparador + nombreArchivo, manejoDataSocket);
                 ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
                 fileCommonHandler.SendFile(absPath);
             } else
             {
-                EnviarMensajeCliente("Error", manejoDataSocket);
+                EnviarMensajeCliente("Este perfil de trabajo no tiene ninguna foto asociada", manejoDataSocket);
             }
         }
         
