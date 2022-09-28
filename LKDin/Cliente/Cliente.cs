@@ -274,17 +274,28 @@ namespace Cliente
                 throw;
             }
 
-            Console.WriteLine("Ingrese la ruta completa del archivo a enviar: ");
-            String abspath = Console.ReadLine();
-            while (string.IsNullOrWhiteSpace(abspath))
-            {
-                Console.WriteLine("Debe ingresar una ruta valida. Intente nuevamente:");
-                abspath = Console.ReadLine();
-            }
-            ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
-            fileCommonHandler.SendFile(abspath);
-            Console.WriteLine("Se envio el archivo al Servidor");
 
+            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            int nroRespuesta = int.Parse(respuesta.Substring(0, 2));
+            
+            if (nroRespuesta == 32)
+            {
+                Console.WriteLine("El usuario no existe, ingrese nuevamente");
+            }
+            else
+            {
+                Console.WriteLine("Ingrese la ruta completa del archivo a enviar: ");
+                String abspath = Console.ReadLine();
+                while (string.IsNullOrWhiteSpace(abspath))
+                {
+                    Console.WriteLine("Debe ingresar una ruta valida. Intente nuevamente:");
+                    abspath = Console.ReadLine();
+                }
+                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
+                fileCommonHandler.SendFile(abspath);
+                Console.WriteLine("Se envio el archivo al Servidor");
+            }
         }
 
         private static void ConsultarPerfilesExistentes(ManejoSockets manejoDataSocket)
@@ -523,8 +534,8 @@ namespace Cliente
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                throw;
+                // Console.WriteLine(e);
+                throw e;
             }
         }
         

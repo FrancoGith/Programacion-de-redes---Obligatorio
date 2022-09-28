@@ -23,12 +23,13 @@ namespace Servidor
         
         static void Main(string[] args)
         {
+            /*datosServidor.AgregarUsuario("U1", "U1");
+            datosServidor.AgregarUsuario("U2", "U2");
+            datosServidor.AgregarUsuario("U3", "U3");
 
-            List<string> hab = new() { "LoL", "Programacion" };
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 1" }, Descripcion = "Me falta pala", Habilidades = hab });
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 2" }, Descripcion = "Se muchas cosas", Habilidades = hab });
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = new() { Username = "Usuario 3" }, Descripcion = "Bases", Habilidades = hab });
-
+            datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U1"), new List<string>() { "C#", "Java" }, "Programador");
+            datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U2"), new List<string>() { "Python" }, "Backend");
+            datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U3"), new List<string>() { "Java" }, "QA");*/
 
             Console.WriteLine("Levantando Servidor");
 
@@ -122,14 +123,23 @@ namespace Servidor
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
             string[] datos = mensajeUsuario.Split("ϴ");
-            datosServidor.Usuarios.Add(new Usuario() { Username = datos[0], Password = datos[1] });
-            
-            EnviarMensajeCliente("Usuario creado", manejoDataSocket);
-            Console.WriteLine("Se ha creado un nuevo usuario");
+
+            if (datosServidor.GetUsuario(datos[0]) != null)
+            {
+                EnviarMensajeCliente("Usuario existente, intente con otro nombre.", manejoDataSocket);
+                Console.WriteLine("No se ha ingresado el usuario porque ya existia");
+            }
+            else
+            {
+                datosServidor.AgregarUsuario(datos[0], datos[1]);
+                EnviarMensajeCliente("Usuario creado", manejoDataSocket);
+                Console.WriteLine("Se ha creado un nuevo usuario");
+            }
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
+            // TODO: que exista el usuario
             string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
             Usuario usuario;
             try
@@ -142,43 +152,60 @@ namespace Servidor
             }
             List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
             string descripcion = datos[2];
-            datosServidor.PerfilesTrabajo.Add(new PerfilTrabajo() { Usuario = usuario, Habilidades = habilidades, Descripcion = descripcion});
+
+            datosServidor.AgregarPerfilTrabajo(usuario, habilidades, descripcion);
 
             EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket);
             Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
         }
-        
+
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
         {
-            PerfilTrabajo perfilUsuario;
+            // TODO: extraer foto a datosServidor.
+            PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
+            string codigo = "310000";
+            
+            if (perfilUsuario == null) {
+                codigo = "320000";
+            }
+            byte[] encodingParteFija = Encoding.UTF8.GetBytes(codigo);
+
             try
             {
-                perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
-                EnviarMensajeCliente("[Servidor] Usuario encontrado", manejoDataSocket);
-            } catch(Exception e)
-            {
-                EnviarMensajeCliente(e.Message, manejoDataSocket);
-                return;
+                manejoDataSocket.Send(encodingParteFija);
             }
-            ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
-            try
+            catch (Exception e)
             {
-                perfilUsuario.Foto = manejo.RecibirArchivo();
-            } catch (Exception e)
-            {
-                EnviarMensajeCliente(e.Message, manejoDataSocket);
-                Console.WriteLine("Ocurrio un error al recibir un archivo");
-                return;
+                Console.WriteLine(e);
+                throw;
             }
-            EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket);
-            Console.WriteLine("Se ha recibido un archivo");
+            if (codigo == "310000")
+            {
+                ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
+                try
+                {
+                    perfilUsuario.Foto = manejo.RecibirArchivo();
+                }
+                catch (Exception e)
+                {
+                    EnviarMensajeCliente(e.Message, manejoDataSocket);
+                    Console.WriteLine("Ocurrio un error al recibir un archivo");
+                    return;
+                }
+                EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket);
+                Console.WriteLine("Se ha recibido un archivo");
+            }
+            else
+            {
+                Console.WriteLine("El usuario ingresado por el cliente no exist");
+            }
         }
 
         private static void LogIn(ManejoSockets manejoDataSocket, string mensaje)
         {
             string[] datos = mensaje.Split(Constantes.CaracterSeparador);
 
-            Usuario usuarioLogIn = datosServidor.Usuarios.FirstOrDefault(x => x.Username == datos[0]);
+            Usuario usuarioLogIn = datosServidor.GetUsuario(datos[0]);
 
             string codigo = "030000";
 
@@ -212,7 +239,7 @@ namespace Servidor
 
             List<string> usuariosEncontrados = new();
 
-            foreach (var perfil in datosServidor.PerfilesTrabajo)
+            foreach (var perfil in datosServidor.GetPerfilesTrabajo())
             {
                 List<string> infoPerfil = perfil.GetSearchData().Split(" ").ToList();
                 infoPerfil = infoPerfil.Select(info => info.ToUpper()).ToList();
@@ -236,7 +263,7 @@ namespace Servidor
                 respuestaUsuario = "Usuarios encontrados: ";
                 foreach (string nombreUsuario in usuariosEncontrados)
                 {
-                    PerfilTrabajo perfilTrabajo = ObtenerPerfilTrabajo(nombreUsuario);
+                    PerfilTrabajo perfilTrabajo = datosServidor.GetPerfilTrabajo(nombreUsuario);
                     string habilidadesPerfil = string.Join("-", perfilTrabajo.Habilidades);
                     string resumenPerfil = $"\n    Nombre: {perfilTrabajo.Usuario.Username}\n    Descripción: {perfilTrabajo.Descripcion}\n    Habilidades: {habilidadesPerfil}\n";
                     respuestaUsuario = $"{respuestaUsuario} \n {resumenPerfil}";
@@ -254,7 +281,7 @@ namespace Servidor
         {
             string[] datos = mensajeUsuario.Split("ϴ");
 
-            PerfilTrabajo usuarioEncontrado = datosServidor.PerfilesTrabajo.FirstOrDefault(usuario => usuario.Usuario.Username == datos[0]);
+            PerfilTrabajo usuarioEncontrado = datosServidor.GetPerfilTrabajo(datos[0]);
 
             string respuestaUsuario = "";
             if (usuarioEncontrado != null)
@@ -274,7 +301,7 @@ namespace Servidor
         {
             string mensaje = "";
 
-            foreach (Usuario Usuario in datosServidor.Usuarios)
+            foreach (Usuario Usuario in datosServidor.GetUsuarios())
             {
                 mensaje += Usuario.Username + Constantes.CaracterSeparadorListas;
             }
@@ -299,7 +326,7 @@ namespace Servidor
         {
             string[] usuarios = cuerpo.Split(Constantes.CaracterSeparadorListas);
 
-            HistorialChat historialDevolver = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((usuarios[0], usuarios[1])) || x.usuarios.Equals((usuarios[1], usuarios[0])));
+            HistorialChat historialDevolver = datosServidor.GetHistorial(usuarios);
 
             if (historialDevolver == null)
             {
@@ -308,7 +335,7 @@ namespace Servidor
                     usuarios = (usuarios[0], usuarios[1])
                 };
 
-                datosServidor.ListaHistoriales.Add(historialDevolver);
+                datosServidor.AgregarHistorial(historialDevolver);
             }
 
             string mensaje = "";
@@ -339,7 +366,7 @@ namespace Servidor
             //[emisor, receptor, texto del mensaje]
             string[] contenido = mensaje.Split(Constantes.CaracterSeparador);
 
-            HistorialChat chatActivo = datosServidor.ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((contenido[0], contenido[1])) || x.usuarios.Equals((contenido[1], contenido[0])));
+            HistorialChat chatActivo = datosServidor.GetHistorial(contenido);
 
             chatActivo.mensajes.Add(contenido[0] + " dice: " + contenido[2]);
         }
@@ -347,11 +374,6 @@ namespace Servidor
         private static int ObtenerComando(string mensajeUsuario)
         {
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
-        }
-
-        private static PerfilTrabajo ObtenerPerfilTrabajo(string nombreUsuario)
-        {
-            return datosServidor.PerfilesTrabajo.FirstOrDefault(perfil => perfil.Usuario.Username == nombreUsuario);
         }
         
         private static void EnviarMensajeCliente(string mensaje, ManejoSockets manejoDataSocket)
