@@ -1,4 +1,5 @@
-﻿using Protocolo;
+﻿using Dominio;
+using Protocolo;
 using Protocolo.ManejoArchivos;
 using Servidor;
 using System;
@@ -14,6 +15,10 @@ namespace Cliente
         
         static void Main(string[] args)
         {
+            //Esto es porque las funciones son estáticas
+            string username = "";
+            //
+
             Console.WriteLine("Iniciando Cliente");
 
             string endPointClienteserverIp = settingsManager.ReadSettings(ClientConfig.endPointClienteIPconfigKey);
@@ -34,7 +39,37 @@ namespace Cliente
             ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
 
             Console.WriteLine("Conexión establecida");
-            Console.WriteLine("Escriba un meensaje para el Servidor");
+
+            bool login = false;
+
+            while (!login)
+            {
+                Console.WriteLine(@"Elija una opción:
+                1 - Iniciar sesión
+                2 - Crear una cuenta");
+                int eleccion = int.Parse(Console.ReadLine());
+                (bool, string) verificacion;
+
+                switch (eleccion)
+                {
+                    case 1:
+                        verificacion = VerificarCredenciales(manejoDataSocket);
+
+                        login = verificacion.Item1;
+                        username = verificacion.Item2;
+                        break;
+                    case 2:
+                        verificacion = AltaUsuario(manejoDataSocket);
+                        login = verificacion.Item1;
+                        username = verificacion.Item2;
+                        break;
+                    default:
+                        Console.WriteLine("Ingrese una opción válida");
+                        break;
+                }
+            }
+
+            Console.WriteLine("Escriba un mensaje para el Servidor");
             bool exit = false;
             while (!exit)
             {
@@ -68,7 +103,7 @@ namespace Cliente
                             ConsultarPerfilEspecifico(manejoDataSocket);
                             break;
                         case 6:
-                            Mensajes(manejoDataSocket);
+                            Mensajes(manejoDataSocket, username);
                             break;
                         case 0:
                             exit = true;
@@ -86,9 +121,82 @@ namespace Cliente
             }
         }
 
-        private static void AltaUsuario(ManejoSockets manejoDataSocket)
+        private static (bool,string) VerificarCredenciales(ManejoSockets manejoDataSocket)
         {
-            Console.WriteLine("Alta de usuario");
+            Console.Clear();
+            Console.WriteLine("Log in\n");
+
+            string username;
+            do
+            {
+                Console.WriteLine("Escriba el nombre de usuario");
+                username = Console.ReadLine().Trim();
+
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    Console.WriteLine("El nombre de usuario no puede estar vacío");
+                }
+            }
+            while (string.IsNullOrWhiteSpace(username));
+
+            string password;
+            do
+            {
+                Console.WriteLine("Escriba la contraseña");
+                password = Console.ReadLine().Trim();
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    Console.WriteLine("La contraseña no puede estar vacía");
+                }
+            }
+            while (string.IsNullOrWhiteSpace(password));
+
+            //Mando informacion de login
+
+            string mensaje = username + Constantes.CaracterSeparador + password;
+            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
+            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
+            string e2 = "01" + e1;
+            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
+
+            try
+            {
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensajeServidor);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo respuesta de login
+            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+
+            respuesta = respuesta.Substring(0, 2);
+
+            if (int.Parse(respuesta) == 2)
+            {
+                Console.WriteLine("Log in realizado con éxito");
+                return (true,username);
+            }
+            else if (int.Parse(respuesta) == 3)
+            {
+                Console.WriteLine("Error: nombre de usuario o contraseña incorrectos");
+                return (false,"");
+            }
+            else
+            {
+                Console.WriteLine("Error desconocido"); //Esto no se debería ejecutar nunca pero lo pongo para que c# no se queje
+                return (false,"");
+            }
+        }
+
+        private static (bool, string) AltaUsuario(ManejoSockets manejoDataSocket)
+        {
+            Console.Clear();
+            Console.WriteLine("Alta de usuario\n");
 
             Console.WriteLine("Escriba el nombre de usuario");
             string username = Console.ReadLine().Trim();
@@ -98,15 +206,16 @@ namespace Cliente
             if (string.IsNullOrWhiteSpace(username))
             {
                 Console.WriteLine("El nombre de usuario no puede estar vacío");
-                return;
+                return (false, "");
             }
             else if (string.IsNullOrWhiteSpace(password))
             {
                 Console.WriteLine("La contraseña no puede estar vacía");
-                return;
+                return (false, "");
             }
             string mensaje = username + "ϴ" + password;
             ComunicacionServidorCliente(manejoDataSocket, mensaje, 10);
+            return (true, username);
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
@@ -240,9 +349,10 @@ namespace Cliente
             ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50);
         }
 
-        private static void Mensajes(ManejoSockets manejoDataSocket)
+        private static void Mensajes(ManejoSockets manejoDataSocket, string emisor)
         {
-            //Solicito la lista de usuarios
+            //Solicito la
+            //de usuarios
             // TODO: refactor
 
             byte[] encodingParteFija = Encoding.UTF8.GetBytes("600000");
@@ -276,7 +386,6 @@ namespace Cliente
             }
 
             string destinatario = string.Empty;
-            string emisor = string.Empty;
             bool formatoOk = false;
 
             Console.WriteLine("Seleccione el destinatario: ");
@@ -285,25 +394,6 @@ namespace Cliente
                 try
                 {
                     destinatario = usuarios[int.Parse(Console.ReadLine())];
-                    formatoOk = true;
-                }
-                catch (FormatException a)
-                {
-                    Console.WriteLine("Por favor ingrese un número");
-                }
-                catch (ArgumentOutOfRangeException b)
-                {
-                    Console.WriteLine("El número de usuario ingresado no existe");
-                }
-            }
-
-            Console.WriteLine("\nSeleccione el emisor: ");
-            formatoOk = false;
-            while (!formatoOk)
-            {
-                try
-                {
-                    emisor = usuarios[int.Parse(Console.ReadLine())];
                     formatoOk = true;
                 }
                 catch (FormatException a)
