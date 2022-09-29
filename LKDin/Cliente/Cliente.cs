@@ -17,7 +17,6 @@ namespace Cliente
         {
             //Esto es porque las funciones son estáticas
             string username = "";
-            //
 
             Console.WriteLine("Iniciando Cliente");
 
@@ -252,8 +251,30 @@ namespace Cliente
             mensaje = mensaje.Remove(mensaje.Length-1, 1);
             mensaje += Constantes.CaracterSeparador;
             mensaje += descripcion + Constantes.CaracterSeparador;
-            
-            ComunicacionServidorCliente(manejoDataSocket, mensaje, "20");
+
+            Console.Clear();
+            Console.WriteLine("Alta de perfil de trabajo\n");
+
+            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, "20");
+            respuesta = respuesta.Substring(0, 2);
+
+            if (int.Parse(respuesta) == 23)
+            {
+                Console.WriteLine("Creacion del perfil de trabajo realizada con éxito");
+            }
+            else if (int.Parse(respuesta) == 22)
+            {
+                Console.WriteLine("Perfil de trabajo existente para este usuario");
+            }
+            else if (int.Parse(respuesta) == 21)
+            {
+                Console.WriteLine("Usuario inexistente para crear perfil de trabajo");
+            }
+            else
+            {
+                Console.WriteLine("Error desconocido"); //Esto no se debería ejecutar nunca pero lo pongo para que c# no se queje
+            }
+
         }
 
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente)
@@ -360,7 +381,7 @@ namespace Cliente
 
             Console.WriteLine("Desea descargar la imagen de perfil (y/n)");
             string siNo = Console.ReadLine();
-            if(siNo == "y")
+            if (siNo == "y")
             {
                 string mensajeServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, "51");
                 string codigoServidor = mensajeServidor.Substring(0, 2);
@@ -370,7 +391,8 @@ namespace Cliente
                     ManejoComunArchivo manejo = new ManejoComunArchivo(socket);
                     manejo.RecibirArchivo(respuestaServidor2[1]);
                 }
-            } else
+            } 
+            else
             {
                 return;
             }
@@ -406,7 +428,7 @@ namespace Cliente
                                                    //entonces acá lo saco, es medio hacky pero evita que tengamos
                                                    //que hacer try catch más adelante
 
-            Console.WriteLine("Usuarios conectados: \n");
+            Console.WriteLine("Usuarios existentes: \n");
             for (int i = 0; i < usuarios.Count; i++)
             {
                 Console.WriteLine(i + " - " + usuarios[i]);
@@ -459,7 +481,8 @@ namespace Cliente
 
             //Escribo mensajes anteriores
             Console.Clear();
-            Console.WriteLine("Chat con " + destinatario);
+            Console.WriteLine("Mensajes con " + destinatario);
+            Console.WriteLine("Iniciaste sesión como " + emisor);
             Console.WriteLine("-   -   -   -   -   -   -   -");
             foreach (string mensajeHistorialChat in mensajes)
             {
@@ -551,7 +574,6 @@ namespace Cliente
             }
             catch (Exception e)
             {
-                // Console.WriteLine(e);
                 throw e;
             }
         }

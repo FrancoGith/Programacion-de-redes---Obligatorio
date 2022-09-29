@@ -141,24 +141,41 @@ namespace Servidor
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
         {
-            // TODO: que exista el usuario
             string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
-            Usuario usuario;
+
             try
             {
-                usuario = datosServidor.GetUsuario(datos[0]);
-            } catch (Exception e)
+                Usuario usuario = datosServidor.GetUsuario(datos[0]);
+                PerfilTrabajo perfilTrabajo = datosServidor.GetPerfilTrabajo(datos[0]);
+                if (usuario != null)
+                {
+                    if (perfilTrabajo != null)
+                    {
+                        EnviarMensajeCliente("Perfil de trabajo existente para este usuario", manejoDataSocket, "22");
+                        Console.WriteLine("Perfil de trabajo existente para este usuario");
+                    }
+                    else
+                    {
+                        List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
+                        string descripcion = datos[2];
+
+                        datosServidor.AgregarPerfilTrabajo(usuario, habilidades, descripcion);
+
+                        EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket, "23");
+                        Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
+                    }
+                }
+                else
+                {
+                    EnviarMensajeCliente("Usuario inexistente para crear perfil de trabajo", manejoDataSocket, "21");
+                    Console.WriteLine("Usuario inexistente para crear perfil de trabajo");
+                }
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 return;
             }
-            List<string> habilidades = new List<string>(datos[1].Split(Constantes.CaracterSeparadorListas));
-            string descripcion = datos[2];
-
-            datosServidor.AgregarPerfilTrabajo(usuario, habilidades, descripcion);
-
-            EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket, "00");
-            Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
         }
 
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
@@ -285,7 +302,7 @@ namespace Servidor
             if (usuarioEncontrado != null)
             {
                 string habilidades = string.Join("-", usuarioEncontrado.Habilidades);
-                respuestaUsuario = $"\nUsuario encontrado\n    Nombre: {usuarioEncontrado.Usuario.Username}\n    Descripción: {usuarioEncontrado.Descripcion}\n    Habilidades: {habilidades}\n    Imagen: {usuarioEncontrado.Foto}\n";
+                respuestaUsuario = $"\nUsuario encontrado\n    Nombre: {usuarioEncontrado.Usuario.Username}\n    Descripción: {usuarioEncontrado.Descripcion}\n    Habilidades: {habilidades}\n    Imagen: {usuarioEncontrado.Foto}\n" + Constantes.CaracterSeparador + $"{usuarioEncontrado.Foto}";
             }
             else
             {
