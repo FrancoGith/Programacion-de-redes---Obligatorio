@@ -162,25 +162,8 @@ namespace Cliente
             //Mando informacion de login
 
             string mensaje = username + Constantes.CaracterSeparador + password;
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = "01" + e1;
-            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
 
-            try
-            {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensajeServidor);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-
-            //Recibo respuesta de login
-            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
-            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, "01");
 
             respuesta = respuesta.Substring(0, 2);
 
@@ -223,7 +206,7 @@ namespace Cliente
             }
 
             string mensaje = username + "ϴ" + password;
-            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, 10);
+            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, "10");
             respuesta = respuesta.Substring(0, 2);
 
             if (int.Parse(respuesta) == 12)
@@ -241,8 +224,6 @@ namespace Cliente
                 Console.WriteLine("Error desconocido"); //Esto no se debería ejecutar nunca pero lo pongo para que c# no se queje
                 return (false, "");
             }
-
-            /*return (true, username);*/
         }
 
         private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
@@ -272,7 +253,7 @@ namespace Cliente
             mensaje += Constantes.CaracterSeparador;
             mensaje += descripcion + Constantes.CaracterSeparador;
             
-            ComunicacionServidorCliente(manejoDataSocket, mensaje, 20);
+            ComunicacionServidorCliente(manejoDataSocket, mensaje, "20");
         }
 
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente)
@@ -286,24 +267,7 @@ namespace Cliente
                 return;
             }
 
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(username);
-            string e1 = "30" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            byte[] parteFija = Encoding.UTF8.GetBytes(e1);
-
-            try
-            {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensajeServidor);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-
-
-            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
-            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
+            string respuesta = ComunicacionServidorCliente(manejoDataSocket, username, "30");
             int nroRespuesta = int.Parse(respuesta.Substring(0, 2));
 
             if (nroRespuesta == 32)
@@ -321,7 +285,14 @@ namespace Cliente
                 }
                 ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
                 fileCommonHandler.SendFile(abspath);
-                Console.WriteLine("Se envio el archivo al Servidor");
+                
+                // Este Receive es necesario porque el servidor envia un ultimo mensaje.                
+                byte[] largoParteFijaRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
+                string parteFijaRespuesta = Encoding.UTF8.GetString(largoParteFijaRespuesta);
+                byte[] dataRespuesta = manejoDataSocket.Receive(int.Parse(parteFijaRespuesta.Substring(3)));
+                string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
+                
+                Console.WriteLine(mensajeUsuarioRespuesta);
             }
         }
 
@@ -365,7 +336,7 @@ namespace Cliente
                 }
             }
             string mensaje = string.Join(" ", habilidades) + "ϴ" + string.Join(" ", palabrasDescripcion);
-            ComunicacionServidorCliente(manejoDataSocket, mensaje, 40);
+            ComunicacionServidorCliente(manejoDataSocket, mensaje, "40");
         }
 
         private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket, Socket socket)
@@ -384,18 +355,20 @@ namespace Cliente
                     break;
                 }
             }
-            string respuestaServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 50);
+            string respuestaServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, "50");
             if (respuestaServidor.Substring(3) == "\nPerfil de trabajo no existente\n") return;
 
             Console.WriteLine("Desea descargar la imagen de perfil (y/n)");
             string siNo = Console.ReadLine();
             if(siNo == "y")
             {
-                string[] respuesta = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, 51).Substring(3).Split(Constantes.CaracterSeparador);
-                if (respuesta[0] == "Ok")
+                string mensajeServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, "51");
+                string codigoServidor = mensajeServidor.Substring(0, 2);
+                string[] respuestaServidor2 = mensajeServidor.Substring(3).Split(Constantes.CaracterSeparador);
+                if (codigoServidor == "52")
                 {
                     ManejoComunArchivo manejo = new ManejoComunArchivo(socket);
-                    manejo.RecibirArchivo(respuesta[1]);
+                    manejo.RecibirArchivo(respuestaServidor2[1]);
                 }
             } else
             {
@@ -556,7 +529,7 @@ namespace Cliente
             return palabras;
         }
 
-        private static string ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, int opcion)
+        private static string ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, string opcion)
         {
             string e1, e2;
             byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);

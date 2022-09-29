@@ -163,26 +163,19 @@ namespace Servidor
 
         private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
         {
-            // TODO: extraer foto a datosServidor.
             PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
-            string codigo = "310000";
+            string codigo = "31";
+            string mensaje = "Usuario existente";
             
             if (perfilUsuario == null) {
-                codigo = "320000";
+                codigo = "32";
+                mensaje = "Usuario no existente";
             }
             byte[] encodingParteFija = Encoding.UTF8.GetBytes(codigo);
 
-            try
-            {
-                manejoDataSocket.Send(encodingParteFija);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            EnviarMensajeCliente(mensaje, manejoDataSocket, codigo);
 
-            if (codigo == "310000")
+            if (codigo == "31")
             {
                 ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
                 string nombreArchivo = $"imagenes\\foto{nombreUsuario}";
@@ -196,8 +189,9 @@ namespace Servidor
                     Console.WriteLine("Ocurrio un error al recibir un archivo");
                     return;
                 }
-                EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket, "00");
+                EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket, "33");
                 Console.WriteLine("Se ha recibido un archivo");
+                
             }
             else
             {
@@ -297,7 +291,7 @@ namespace Servidor
             {
                 respuestaUsuario = "\nPerfil de trabajo no existente\n";
             }
-            EnviarMensajeCliente(respuestaUsuario, socketCliente, "00");
+            EnviarMensajeCliente(respuestaUsuario, socketCliente, "98");
             Console.WriteLine("Se ha buscado un perfil especifico");
 
         }
@@ -308,23 +302,26 @@ namespace Servidor
             try
             {
                 perfil = datosServidor.GetPerfilTrabajo(nombreUsuario);
-            } catch(Exception e)
+            } 
+            catch(Exception e)
             {
-                EnviarMensajeCliente("Perfil de trabajo no existente", manejoDataSocket, "00");
+                EnviarMensajeCliente("Perfil de trabajo no existente", manejoDataSocket, "53");
                 Console.WriteLine(e.Message);
                 return;
             }
+            
             if (perfil.Foto != String.Empty)
             {
                 string pathApp = Directory.GetCurrentDirectory();
                 string absPath = Path.Combine(pathApp, perfil.Foto);
                 string nombreArchivo = "imagenes\\" + Path.GetFileNameWithoutExtension(perfil.Foto);
-                EnviarMensajeCliente("Ok" + Constantes.CaracterSeparador + nombreArchivo, manejoDataSocket, "00");
+                EnviarMensajeCliente("Ok" + Constantes.CaracterSeparador + nombreArchivo, manejoDataSocket, "52");
                 ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
                 fileCommonHandler.SendFile(absPath);
-            } else
+            } 
+            else
             {
-                EnviarMensajeCliente("Este perfil de trabajo no tiene ninguna foto asociada", manejoDataSocket, "00");
+                EnviarMensajeCliente("Este perfil de trabajo no tiene ninguna foto asociada", manejoDataSocket, "54");
             }
         }
         
