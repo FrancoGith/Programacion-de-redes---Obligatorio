@@ -21,7 +21,9 @@ namespace Servidor
         static readonly SettingsManager settingsManager = new SettingsManager();
 
         private static DatosServidor datosServidor = new DatosServidor();
-        
+
+        private static int clientesConectados;
+
         static void Main(string[] args)
         {
             datosServidor.AgregarUsuario("U1", "U1");
@@ -45,7 +47,7 @@ namespace Servidor
             socketServidor.Bind(endpoint);
             socketServidor.Listen(serverListen);
 
-            int clientesConectados = 0;
+            clientesConectados = 0;
             while (clientesConectados <= cantidadClientes)
             {
                 var socketCliente = socketServidor.Accept();
@@ -120,6 +122,7 @@ namespace Servidor
                 }
             }
             Console.WriteLine("Cliente desconectado");
+            clientesConectados--;
         }
 
         static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
