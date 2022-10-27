@@ -22,9 +22,7 @@ namespace Servidor
 
         private static DatosServidor datosServidor = new DatosServidor();
 
-        private static int clientesConectados;
-
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             datosServidor.AgregarUsuario("U1", "U1");
             datosServidor.AgregarUsuario("U2", "U2");
@@ -41,108 +39,100 @@ namespace Servidor
             int serverListen = int.Parse(settingsManager.ReadSettings(ServerConfig.serverListenconfigKey));
             int cantidadClientes = int.Parse(settingsManager.ReadSettings(ServerConfig.serverClientsconfigKey));
 
-            var socketServidor = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var endpoint = new IPEndPoint(IPAddress.Parse(serverIP), serverPort);
-            
-            socketServidor.Bind(endpoint);
-            socketServidor.Listen(serverListen);
 
-            clientesConectados = 0;
-            while (clientesConectados <= cantidadClientes)
+            TcpListener tcpListener = new TcpListener(endpoint);
+
+            tcpListener.Start(cantidadClientes);
+
+            while (true)
             {
-                var socketCliente = socketServidor.Accept();
-                clientesConectados++;
+                var tcpClientSocket = await tcpListener.AcceptTcpClientAsync();
                 Console.WriteLine("Cliente conectado");
-                Thread thread = new Thread(() => ManejarCliente(socketCliente))
-                {
-                    IsBackground = true
-                };
-                thread.Start();
+                Task task = Task.Run(async () => await ManejarCliente(tcpClientSocket));
             }
-            Console.WriteLine("Servidor desconectado");
-
         }
 
-        static void ManejarCliente(Socket socketCliente)
+        static async Task ManejarCliente(TcpClient tcpClient)
         {
             bool clienteConectado = true;
-            ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
-            while (clienteConectado)
+            using (var stream = tcpClient.GetStream())
             {
-                try
+                ManejoStreamsHelper manejoDataSocket = new ManejoStreamsHelper(stream);
+                while (clienteConectado)
                 {
-                    byte[] largoParteFija = manejoDataSocket.Receive(Constantes.LargoParteFija);
-                    string parteFija = Encoding.UTF8.GetString(largoParteFija);
-                    byte[] data = manejoDataSocket.Receive(int.Parse(parteFija.Substring(3)));
-                    string mensajeUsuario = Encoding.UTF8.GetString(data);
-
-                    Console.WriteLine($"[Cliente] {mensajeUsuario}");
-
-                    int comando = ObtenerComando(parteFija);
-
-                    switch (comando)
+                    try
                     {
-                        case 1:
-                            LogIn(manejoDataSocket, mensajeUsuario);
-                            break;
-                        case 10:
-                            AltaDeUsuario(manejoDataSocket, mensajeUsuario);
-                            break;
-                        case 20:
-                            AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
-                            break;
-                        case 30:
-                            AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente, mensajeUsuario);
-                            break;
-                        case 40:
-                            ConsultarPerfilesExistentes(manejoDataSocket, mensajeUsuario);
-                            break;
-                        case 50:
-                            ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
-                            break;
-                        case 51:
-                            EnviarImagenPerfilEspecifico(manejoDataSocket, socketCliente, mensajeUsuario);
-                            break;
-                        case 60:
-                            DevolverListaUsuarios(manejoDataSocket);
-                            break;
-                        case 61:
-                            DevolverHistorialChat(manejoDataSocket, mensajeUsuario);
-                            break;
-                        case 62:
-                            Mensajes(manejoDataSocket, mensajeUsuario);
-                            break;
-                        default:
-                            break;
+                        string parteFija = await manejoDataSocket.Recieve();
+                        string mensajeUsuario = await manejoDataSocket.Recieve();
+
+                        Console.WriteLine($"[Cliente] {mensajeUsuario}");
+
+                        int comando = ObtenerComando(parteFija);
+
+                        switch (comando)
+                        {
+                            case 1:
+                                LogIn(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 10:
+                                AltaDeUsuario(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 20:
+                                AltaDePerfilDeTrabajo(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 30:
+                                await AsociarFotoDePerfilATrabajo(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 40:
+                                ConsultarPerfilesExistentes(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 50:
+                                ConsultarPerfilEspecifico(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 51:
+                                await EnviarImagenPerfilEspecifico(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 60:
+                                DevolverListaUsuarios(manejoDataSocket);
+                                break;
+                            case 61:
+                                DevolverHistorialChat(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 62:
+                                Mensajes(manejoDataSocket, mensajeUsuario);
+                                break;
+                            default:
+                                break;
+                        }
                     }
-                }
-                catch (SocketException e)
-                {
-                    clienteConectado = false;
+                    catch (SocketException e)
+                    {
+                        clienteConectado = false;
+                    }
                 }
             }
             Console.WriteLine("Cliente desconectado");
-            clientesConectados--;
         }
 
-        static void AltaDeUsuario(ManejoSockets manejoDataSocket, string mensajeUsuario)
+        static void AltaDeUsuario(ManejoStreamsHelper manejoDataSocket, string mensajeUsuario)
         {
-            string[] datos = mensajeUsuario.Split("ϴ");
+            string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
 
             if (datosServidor.GetUsuario(datos[0]) != null)
             {
-                EnviarMensajeCliente("Usuario existente, intente con otro nombre.", manejoDataSocket, "12");
+                EnviarMensajeCliente(manejoDataSocket, "Usuario existente, intente con otro nombre.", "12");
                 Console.WriteLine("No se ha ingresado el usuario porque ya existia");
             }
             else
             {
                 datosServidor.AgregarUsuario(datos[0], datos[1]);
-                EnviarMensajeCliente("Usuario creado", manejoDataSocket, "11");
+                EnviarMensajeCliente(manejoDataSocket, "Usuario creado", "11");
                 Console.WriteLine("Se ha creado un nuevo usuario");
             }
         }   
 
-        private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket, string mensajeUsuario)
+        private static void AltaDePerfilDeTrabajo(ManejoStreamsHelper manejoDataSocket, string mensajeUsuario)
         {
             string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
 
@@ -154,7 +144,7 @@ namespace Servidor
                 {
                     if (perfilTrabajo != null)
                     {
-                        EnviarMensajeCliente("Perfil de trabajo existente para este usuario", manejoDataSocket, "22");
+                        EnviarMensajeCliente(manejoDataSocket, "Perfil de trabajo existente para este usuario", "22");
                         Console.WriteLine("Perfil de trabajo existente para este usuario");
                     }
                     else
@@ -164,13 +154,13 @@ namespace Servidor
 
                         datosServidor.AgregarPerfilTrabajo(usuario, habilidades, descripcion);
 
-                        EnviarMensajeCliente("Perfil de trabajo creado", manejoDataSocket, "23");
+                        EnviarMensajeCliente(manejoDataSocket, "Perfil de trabajo creado", "23");
                         Console.WriteLine("Se ha creado un nuevo perfil de trabajo");
                     }
                 }
                 else
                 {
-                    EnviarMensajeCliente("Usuario inexistente para crear perfil de trabajo", manejoDataSocket, "21");
+                    EnviarMensajeCliente(manejoDataSocket, "Usuario inexistente para crear perfil de trabajo", "21");
                     Console.WriteLine("Usuario inexistente para crear perfil de trabajo");
                 }
             }
@@ -181,7 +171,7 @@ namespace Servidor
             }
         }
 
-        private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente, string nombreUsuario)
+        private async static Task AsociarFotoDePerfilATrabajo(ManejoStreamsHelper manejoDataSocket, string nombreUsuario)
         {
             PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
             string codigo = "31";
@@ -191,25 +181,24 @@ namespace Servidor
                 codigo = "32";
                 mensaje = "Usuario no existente";
             }
-            byte[] encodingParteFija = Encoding.UTF8.GetBytes(codigo);
 
-            EnviarMensajeCliente(mensaje, manejoDataSocket, codigo);
+            EnviarMensajeCliente(manejoDataSocket, mensaje, codigo);
 
             if (codigo == "31")
             {
-                ManejoComunArchivo manejo = new ManejoComunArchivo(socketCliente);
+                ManejoComunArchivo manejo = new ManejoComunArchivo(manejoDataSocket);
                 string nombreArchivo = $"imagenes\\foto{nombreUsuario}";
                 try
                 {
-                    perfilUsuario.Foto = manejo.RecibirArchivo(nombreArchivo);
+                    perfilUsuario.Foto = await manejo.RecibirArchivo(nombreArchivo);
                 } 
                 catch (Exception e)
                 {
-                    EnviarMensajeCliente(e.Message, manejoDataSocket, "00");
+                    EnviarMensajeCliente(manejoDataSocket, e.Message, "00");
                     Console.WriteLine("Ocurrio un error al recibir un archivo");
                     return;
                 }
-                EnviarMensajeCliente("El servidor recibio el archivo", manejoDataSocket, "33");
+                EnviarMensajeCliente(manejoDataSocket, "El servidor recibio el archivo", "33");
                 Console.WriteLine("Se ha recibido un archivo");
                 
             }
@@ -219,7 +208,7 @@ namespace Servidor
             }
         }
 
-        private static void LogIn(ManejoSockets manejoDataSocket, string mensaje)
+        private static void LogIn(ManejoStreamsHelper manejoDataSocket, string mensaje)
         {
             string[] datos = mensaje.Split(Constantes.CaracterSeparador);
 
@@ -232,22 +221,21 @@ namespace Servidor
                 codigo = "020000";
             }
 
-            byte[] encodingParteFija = Encoding.UTF8.GetBytes(codigo);
-
             try
             {
-                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send(codigo);
+                manejoDataSocket.Send("");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine($"Exception thrown - Message: {e.Message}");
                 throw;
             }
         }
 
-        private static void ConsultarPerfilesExistentes(ManejoSockets socketCliente, string mensajeUsuario)
+        private static void ConsultarPerfilesExistentes(ManejoStreamsHelper socketCliente, string mensajeUsuario)
         {
-            string[] datos = mensajeUsuario.Split("ϴ");
+            string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
 
             List<string> habilidades = datos[0].Split(" ").ToList();
             habilidades = habilidades.Select(habilidad => habilidad.ToUpper()).ToList();
@@ -291,11 +279,11 @@ namespace Servidor
             {
                 respuestaUsuario = "\nNo se encontraron coincidencias\n";
             }
-            EnviarMensajeCliente(respuestaUsuario, socketCliente, "00");
+            EnviarMensajeCliente(socketCliente, respuestaUsuario, "00");
             Console.WriteLine("Se han buscado perfiles");
         }
 
-        private static void ConsultarPerfilEspecifico(ManejoSockets socketCliente, string mensajeUsuario)
+        private static void ConsultarPerfilEspecifico(ManejoStreamsHelper socketCliente, string mensajeUsuario)
         {
             string[] datos = mensajeUsuario.Split(Constantes.CaracterSeparador);
 
@@ -311,12 +299,12 @@ namespace Servidor
             {
                 respuestaUsuario = "\nPerfil de trabajo no existente\n";
             }
-            EnviarMensajeCliente(respuestaUsuario, socketCliente, "98");
+            EnviarMensajeCliente(socketCliente, respuestaUsuario, "98");
             Console.WriteLine("Se ha buscado un perfil especifico");
 
         }
 
-        private static void EnviarImagenPerfilEspecifico(ManejoSockets manejoDataSocket,Socket socketCliente, string nombreUsuario)
+        private static async Task EnviarImagenPerfilEspecifico(ManejoStreamsHelper manejoDataSocket, string nombreUsuario)
         {
             PerfilTrabajo perfil;
             try
@@ -325,7 +313,7 @@ namespace Servidor
             } 
             catch(Exception e)
             {
-                EnviarMensajeCliente("Perfil de trabajo no existente", manejoDataSocket, "53");
+                EnviarMensajeCliente(manejoDataSocket, "Perfil de trabajo no existente", "53");
                 Console.WriteLine(e.Message);
                 return;
             }
@@ -335,17 +323,17 @@ namespace Servidor
                 string pathApp = Directory.GetCurrentDirectory();
                 string absPath = Path.Combine(pathApp, perfil.Foto);
                 string nombreArchivo = "imagenes\\" + Path.GetFileNameWithoutExtension(perfil.Foto);
-                EnviarMensajeCliente("Ok" + Constantes.CaracterSeparador + nombreArchivo, manejoDataSocket, "52");
-                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
-                fileCommonHandler.SendFile(absPath);
+                EnviarMensajeCliente(manejoDataSocket, "Ok" + Constantes.CaracterSeparador + nombreArchivo, "52");
+                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoDataSocket);
+                await fileCommonHandler.SendFile(absPath);
             } 
             else
             {
-                EnviarMensajeCliente("Este perfil de trabajo no tiene ninguna foto asociada", manejoDataSocket, "54");
+                EnviarMensajeCliente(manejoDataSocket, "Este perfil de trabajo no tiene ninguna foto asociada", "54");
             }
         }
         
-        private static void DevolverListaUsuarios(ManejoSockets manejoDataSocket)
+        private static void DevolverListaUsuarios(ManejoStreamsHelper manejoDataSocket)
         {
             string mensaje = "";
 
@@ -354,23 +342,10 @@ namespace Servidor
                 mensaje += Usuario.Username + Constantes.CaracterSeparadorListas;
             }
 
-            byte[] encodingMensaje = Encoding.UTF8.GetBytes(mensaje);
-            string parteFija = "60" + encodingMensaje.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0'); ;
-            byte[] encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
-
-            try
-            {
-                manejoDataSocket.Send(encodingParteFija);
-                manejoDataSocket.Send(encodingMensaje);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
         }
 
-        private static void DevolverHistorialChat(ManejoSockets manejoDataSocket, string cuerpo)
+        private static void DevolverHistorialChat(ManejoStreamsHelper manejoDataSocket, string cuerpo)
         {
             string[] usuarios = cuerpo.Split(Constantes.CaracterSeparadorListas);
 
@@ -393,23 +368,10 @@ namespace Servidor
                 mensaje += chat + Constantes.CaracterSeparadorListas;
             }
 
-            byte[] encodingMensaje = Encoding.UTF8.GetBytes(mensaje);
-            string parteFija = "60" + encodingMensaje.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0'); ;
-            byte[] encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
-
-            try
-            {
-                manejoDataSocket.Send(encodingParteFija);
-                manejoDataSocket.Send(encodingMensaje);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
         }
 
-        private static void Mensajes(ManejoSockets socketCliente, string mensaje)
+        private static void Mensajes(ManejoStreamsHelper socketCliente, string mensaje)
         {
             //[emisor, receptor, texto del mensaje]
             string[] contenido = mensaje.Split(Constantes.CaracterSeparador);
@@ -424,20 +386,16 @@ namespace Servidor
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
         }
         
-        private static void EnviarMensajeCliente(string mensaje, ManejoSockets manejoDataSocket, string code)
+        private static void EnviarMensajeCliente(ManejoStreamsHelper manejoDataSocket, string mensaje, string code)
         {
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            string e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            string e2 = code + e1;
-            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             try
             {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensajeServidor);
+                manejoDataSocket.Send(code);
+                manejoDataSocket.Send(mensaje);
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine($"Exception thrown - Message: {e.Message}");
             }
         }
     }

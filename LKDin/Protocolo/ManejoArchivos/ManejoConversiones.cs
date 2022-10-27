@@ -10,12 +10,12 @@ namespace Protocolo.ManejoArchivos
     {
         public static byte[] ConvertStringToBytes(string value)
         {
-            return Encoding.UTF8.GetBytes(value);
+            return Encoding.ASCII.GetBytes(value);
         }
 
         public static string ConvertBytesToString(byte[] value)
         {
-            return Encoding.UTF8.GetString(value);
+            return Encoding.ASCII.GetString(value);
         }
 
         public static byte[] ConvertIntToBytes(int value)

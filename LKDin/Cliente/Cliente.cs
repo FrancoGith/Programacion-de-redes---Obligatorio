@@ -12,8 +12,8 @@ namespace Cliente
     class Cliente
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-        
-        static void Main(string[] args)
+
+        static async Task Main(string[] args)
         {
             //Esto es porque las funciones son estáticas
             string username = "";
@@ -26,60 +26,59 @@ namespace Cliente
             string serverIp = settingsManager.ReadSettings(ClientConfig.serverIPconfigKey);
             int serverPort = int.Parse(settingsManager.ReadSettings(ClientConfig.serverPortconfigKey));
 
-            var socketCliente = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var endpointCliente = new IPEndPoint(IPAddress.Parse(endPointClienteserverIp), endPointClienteserverPort);
-            
-            socketCliente.Bind(endpointCliente);
-
             var endpointServidor = new IPEndPoint(IPAddress.Parse(serverIp), serverPort);
-           
-            socketCliente.Connect(endpointServidor);
-            
-            ManejoSockets manejoDataSocket = new ManejoSockets(socketCliente);
+
+            var tcpClient = new TcpClient(endpointCliente);
+
+            await tcpClient.ConnectAsync(endpointServidor);
 
             Console.WriteLine("Conexión establecida");
 
             bool login = false;
 
-            while (!login)
+            using (var stream = tcpClient.GetStream())
             {
-                Console.WriteLine(@"Elija una opción:
-                1 - Iniciar sesión
-                2 - Crear una cuenta");
-                try
-                { 
-                    int eleccion = int.Parse(Console.ReadLine());
-                    (bool, string) verificacion;
-
-                    switch (eleccion)
+                ManejoStreamsHelper manejoStreams = new ManejoStreamsHelper(stream);
+                while (!login)
+                {
+                    Console.WriteLine(@"Elija una opción:
+                    1 - Iniciar sesión
+                    2 - Crear una cuenta");
+                    try
                     {
-                        case 1:
-                            verificacion = VerificarCredenciales(manejoDataSocket);
+                        int eleccion = int.Parse(Console.ReadLine());
+                        (bool, string) verificacion;
 
-                            login = verificacion.Item1;
-                            username = verificacion.Item2;
-                            break;
-                        case 2:
-                            verificacion = AltaUsuario(manejoDataSocket);
-                            login = verificacion.Item1;
-                            username = verificacion.Item2;
-                            break;
-                        default:
-                            Console.WriteLine("Ingrese una opción válida");
-                            break;
+                        switch (eleccion)
+                        {
+                            case 1:
+                                verificacion = await VerificarCredenciales(manejoStreams);
+
+                                login = verificacion.Item1;
+                                username = verificacion.Item2;
+                                break;
+                            case 2:
+                                verificacion = await AltaUsuario(manejoStreams);
+                                login = verificacion.Item1;
+                                username = verificacion.Item2;
+                                break;
+                            default:
+                                Console.WriteLine("Ingrese una opción válida");
+                                break;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Ingrese una opción válida");
                     }
                 }
-                catch (Exception)
-                {
-                    Console.WriteLine("Ingrese una opción válida");
-                }
-            }
 
-            Console.WriteLine("Escriba un mensaje para el Servidor");
-            bool exit = false;
-            while (!exit)
-            {
-                Console.WriteLine(@"Elija una opción:
+                Console.WriteLine("Escriba un mensaje para el Servidor");
+                bool exit = false;
+                while (!exit)
+                {
+                    Console.WriteLine(@"Elija una opción:
                 1 - Alta de usuario
                 2 - Alta de perfil de trabajo
                 3 - Asociar foto de perfil a trabajo
@@ -87,48 +86,49 @@ namespace Cliente
                 5 - Consultar perfil específico
                 6 - Mensajes
                 0 - Salir y desconectarse");
-                int opcion = 9999;
-                try
-                {
-                    opcion = int.Parse(Console.ReadLine());
-                    switch (opcion)
+                    int opcion = 9999;
+                    try
                     {
-                        case 1:
-                            AltaUsuario(manejoDataSocket);
-                            break;
-                        case 2:
-                            AltaDePerfilDeTrabajo(manejoDataSocket);
-                            break;
-                        case 3:
-                            AsociarFotoDePerfilATrabajo(manejoDataSocket, socketCliente);
-                            break;
-                        case 4:
-                            ConsultarPerfilesExistentes(manejoDataSocket);
-                            break;
-                        case 5:
-                            ConsultarPerfilEspecifico(manejoDataSocket, socketCliente);
-                            break;
-                        case 6:
-                            Mensajes(manejoDataSocket, username);
-                            break;
-                        case 0:
-                            exit = true;
-                            Desconexion(socketCliente);
-                            break;
-                        default:
-                            Console.WriteLine("Ingrese una opción válida");
-                            break;
+                        opcion = int.Parse(Console.ReadLine());
+                        switch (opcion)
+                        {
+                            case 1:
+                                await AltaUsuario(manejoStreams);
+                                break;
+                            case 2:
+                                await AltaDePerfilDeTrabajo(manejoStreams);
+                                break;
+                            case 3:
+                                await AsociarFotoDePerfilATrabajo(manejoStreams);
+                                break;
+                            case 4:
+                                await ConsultarPerfilesExistentes(manejoStreams);
+                                break;
+                            case 5:
+                                await ConsultarPerfilEspecifico(manejoStreams);
+                                break;
+                            case 6:
+                                await Mensajes(manejoStreams, username);
+                                break;
+                            case 0:
+                                exit = true;
+                                Desconexion(tcpClient);
+                                break;
+                            default:
+                                Console.WriteLine("Ingrese una opción válida");
+                                break;
+                        }
                     }
+                    catch (FormatException) { opcion = 9999; }
+                    catch (ArgumentNullException) { opcion = 9999; }
+                    catch (OverflowException) { opcion = 9999; }
+
                 }
-                catch (FormatException) { opcion = 9999; }
-                catch (ArgumentNullException) { opcion = 9999; }
-                catch (OverflowException) { opcion = 9999; }
 
             }
-            
         }
 
-        private static (bool,string) VerificarCredenciales(ManejoSockets manejoDataSocket)
+        private async static Task<(bool,string)> VerificarCredenciales(ManejoStreamsHelper manejoDataSocket)
         {
             Console.Clear();
             Console.WriteLine("Log in\n");
@@ -162,7 +162,7 @@ namespace Cliente
 
             string mensaje = username + Constantes.CaracterSeparador + password;
 
-            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, "01");
+            string respuesta = await ComunicacionServidorCliente(manejoDataSocket, mensaje, "01");
 
             respuesta = respuesta.Substring(0, 2);
 
@@ -183,7 +183,7 @@ namespace Cliente
             }
         }
 
-        private static (bool, string) AltaUsuario(ManejoSockets manejoDataSocket)
+        private async static Task<(bool, string)> AltaUsuario(ManejoStreamsHelper manejoDataSocket)
         {
             Console.Clear();
             Console.WriteLine("Alta de usuario\n");
@@ -204,8 +204,8 @@ namespace Cliente
                 return (false, "");
             }
 
-            string mensaje = username + "ϴ" + password;
-            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, "10");
+            string mensaje = username + Constantes.CaracterSeparador + password;
+            string respuesta = await ComunicacionServidorCliente(manejoDataSocket, mensaje, "10");
             respuesta = respuesta.Substring(0, 2);
 
             if (int.Parse(respuesta) == 12)
@@ -225,7 +225,7 @@ namespace Cliente
             }
         }
 
-        private static void AltaDePerfilDeTrabajo(ManejoSockets manejoDataSocket)
+        private async static Task AltaDePerfilDeTrabajo(ManejoStreamsHelper manejoDataSocket)
         {
             Console.WriteLine("Alta Perfil de Trabajo");
             Console.WriteLine("Ingrese el nombre del usuario del perfil a crear:");
@@ -255,7 +255,7 @@ namespace Cliente
             Console.Clear();
             Console.WriteLine("Alta de perfil de trabajo\n");
 
-            string respuesta = ComunicacionServidorCliente(manejoDataSocket, mensaje, "20");
+            string respuesta = await ComunicacionServidorCliente(manejoDataSocket, mensaje, "20");
             respuesta = respuesta.Substring(0, 2);
 
             if (int.Parse(respuesta) == 23)
@@ -277,18 +277,18 @@ namespace Cliente
 
         }
 
-        private static void AsociarFotoDePerfilATrabajo(ManejoSockets manejoDataSocket, Socket socketCliente)
+        private async static Task AsociarFotoDePerfilATrabajo(ManejoStreamsHelper manejoStreams)
         {
             Console.WriteLine("Asociar foto a un perfil de trabajo");
             Console.WriteLine("Ingrese el nombre del usuario del perfil a modificar:");
-            string username = Console.ReadLine().Trim();
+            string username = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(username))
             {
                 Console.WriteLine("El nombre de usuario no puede estar vacío");
                 return;
             }
 
-            string respuesta = ComunicacionServidorCliente(manejoDataSocket, username, "30");
+            string respuesta = await ComunicacionServidorCliente(manejoStreams, username, "30");
             int nroRespuesta = int.Parse(respuesta.Substring(0, 2));
 
             if (nroRespuesta == 32)
@@ -297,27 +297,37 @@ namespace Cliente
             }
             else
             {
-                Console.WriteLine("Ingrese la ruta completa del archivo a enviar: ");
-                String abspath = Console.ReadLine();
+                Console.WriteLine("Ingrese la ruta completa del archivo a enviar:");
+                string abspath = Console.ReadLine();
                 while (string.IsNullOrWhiteSpace(abspath))
                 {
                     Console.WriteLine("Debe ingresar una ruta valida. Intente nuevamente:");
                     abspath = Console.ReadLine();
                 }
-                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(socketCliente);
-                fileCommonHandler.SendFile(abspath);
-                
+                if(abspath.StartsWith("\"") && abspath.EndsWith("\""))
+                {
+                    abspath = abspath.Substring(1, abspath.Length - 2);
+                }
+                try
+                {
+                    ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoStreams);
+                    await fileCommonHandler.SendFile(abspath);
+                } catch (Exception e)
+                {
+                    Console.WriteLine("Ocurrió un error: " + e.Message);
+                    await manejoStreams.Recieve();
+                    await manejoStreams.Recieve();
+                    return;
+                }
                 // Este Receive es necesario porque el servidor envia un ultimo mensaje.                
-                byte[] largoParteFijaRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
-                string parteFijaRespuesta = Encoding.UTF8.GetString(largoParteFijaRespuesta);
-                byte[] dataRespuesta = manejoDataSocket.Receive(int.Parse(parteFijaRespuesta.Substring(3)));
-                string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
-                
+                string parteFijaRespuesta = await manejoStreams.Recieve();
+                string mensajeUsuarioRespuesta = await manejoStreams.Recieve();
+
                 Console.WriteLine(mensajeUsuarioRespuesta);
             }
         }
 
-        private static void ConsultarPerfilesExistentes(ManejoSockets manejoDataSocket)
+        private async static Task ConsultarPerfilesExistentes(ManejoStreamsHelper manejoDataSocket)
         {
             Console.WriteLine("Consultar perfiles existentes");
 
@@ -356,11 +366,11 @@ namespace Cliente
                     Console.WriteLine("Solo se permiten opciones");
                 }
             }
-            string mensaje = string.Join(" ", habilidades) + "ϴ" + string.Join(" ", palabrasDescripcion);
-            ComunicacionServidorCliente(manejoDataSocket, mensaje, "40");
+            string mensaje = string.Join(" ", habilidades) + Constantes.CaracterSeparador + string.Join(" ", palabrasDescripcion);
+            await ComunicacionServidorCliente(manejoDataSocket, mensaje, "40");
         }
 
-        private static void ConsultarPerfilEspecifico(ManejoSockets manejoDataSocket, Socket socket)
+        private async static Task ConsultarPerfilEspecifico(ManejoStreamsHelper manejoStreams)
         {
             Console.WriteLine("Consultar perfil especifico");
 
@@ -376,20 +386,20 @@ namespace Cliente
                     break;
                 }
             }
-            string respuestaServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, "50");
+            string respuestaServidor = await ComunicacionServidorCliente(manejoStreams, usuarioBuscar, "50");
             if (respuestaServidor.Substring(3) == "\nPerfil de trabajo no existente\n") return;
 
             Console.WriteLine("Desea descargar la imagen de perfil (y/n)");
             string siNo = Console.ReadLine();
             if (siNo == "y")
             {
-                string mensajeServidor = ComunicacionServidorCliente(manejoDataSocket, usuarioBuscar, "51");
+                string mensajeServidor = await ComunicacionServidorCliente(manejoStreams, usuarioBuscar, "51");
                 string codigoServidor = mensajeServidor.Substring(0, 2);
                 string[] respuestaServidor2 = mensajeServidor.Substring(3).Split(Constantes.CaracterSeparador);
                 if (codigoServidor == "52")
                 {
-                    ManejoComunArchivo manejo = new ManejoComunArchivo(socket);
-                    manejo.RecibirArchivo(respuestaServidor2[1]);
+                    ManejoComunArchivo manejo = new ManejoComunArchivo(manejoStreams);
+                    await manejo.RecibirArchivo(respuestaServidor2[1]);
                 }
             } 
             else
@@ -398,17 +408,15 @@ namespace Cliente
             }
         }
 
-        private static void Mensajes(ManejoSockets manejoDataSocket, string emisor)
+        private static async Task Mensajes(ManejoStreamsHelper manejoDataSocket, string emisor)
         {
             //Solicito la
             //de usuarios
-            // TODO: refactor
-
-            byte[] encodingParteFija = Encoding.UTF8.GetBytes("600000");
+            // TODO: refactor REFACTOR YA CULIAO
 
             try
             {
-                manejoDataSocket.Send(encodingParteFija);
+                manejoDataSocket.Send("600000");
             }
             catch (Exception e)
             {
@@ -417,10 +425,8 @@ namespace Cliente
             }
 
             //Recibo la lista de usuarios
-            byte[] encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
-            string respuesta = Encoding.UTF8.GetString(encodingRespuesta);
-            byte[] data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
-            string listaUsuarios = Encoding.UTF8.GetString(data);
+            string respuesta = await manejoDataSocket.Recieve();
+            string listaUsuarios = await manejoDataSocket.Recieve();
 
             List<string> usuarios = listaUsuarios.Split(Constantes.CaracterSeparadorListas).ToList<string>();
 
@@ -457,14 +463,12 @@ namespace Cliente
 
             //pedirle al servidor el chat con el destinatario
             string mensaje = emisor + Constantes.CaracterSeparadorListas + destinatario;
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            string parteFija = "61" + mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            encodingParteFija = Encoding.UTF8.GetBytes(parteFija);
+            string parteFija = "61";
 
             try
             {
-                manejoDataSocket.Send(encodingParteFija);
-                manejoDataSocket.Send(mensajeServidor);
+                manejoDataSocket.Send(parteFija);
+                manejoDataSocket.Send(mensaje);
             }
             catch (Exception e)
             {
@@ -473,10 +477,8 @@ namespace Cliente
             }
 
             //Recibo el historial de mensajes
-            encodingRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
-            respuesta = Encoding.UTF8.GetString(encodingRespuesta);
-            data = manejoDataSocket.Receive(int.Parse(respuesta.Substring(3)));
-            string listaMensajes = Encoding.UTF8.GetString(data);
+            respuesta = await manejoDataSocket.Recieve();
+            string listaMensajes = await manejoDataSocket.Recieve();
             string[] mensajes = listaMensajes.Split(Constantes.CaracterSeparadorListas);
 
             //Escribo mensajes anteriores
@@ -496,12 +498,11 @@ namespace Cliente
             string mensajeChat = emisor + Constantes.CaracterSeparador + destinatario + Constantes.CaracterSeparador + textoChat;
             byte[] encodingMensajeChat = Encoding.UTF8.GetBytes(mensajeChat);
             string chatParteFija = "62" + encodingMensajeChat.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            byte[] encodingChatParteFija = Encoding.UTF8.GetBytes(chatParteFija);
 
             try
             {
-                manejoDataSocket.Send(encodingChatParteFija);
-                manejoDataSocket.Send(encodingMensajeChat);
+                manejoDataSocket.Send(chatParteFija);
+                manejoDataSocket.Send(mensajeChat);
             }
             catch (Exception e)
             {
@@ -510,9 +511,8 @@ namespace Cliente
             }
         }            
 
-        private static void Desconexion(Socket socketCliente)
+        private static void Desconexion(TcpClient socketCliente)
         {
-            socketCliente.Shutdown(SocketShutdown.Both);
             socketCliente.Close();
 
             Console.WriteLine("Cliente desconectado");
@@ -552,29 +552,23 @@ namespace Cliente
             return palabras;
         }
 
-        private static string ComunicacionServidorCliente(ManejoSockets manejoDataSocket, string mensaje, string opcion)
+        private async static Task<string> ComunicacionServidorCliente(ManejoStreamsHelper manejoDataSocket, string mensaje, string opcion)
         {
-            string e1, e2;
-            byte[] mensajeServidor = Encoding.UTF8.GetBytes(mensaje);
-            e1 = mensajeServidor.Length.ToString().PadLeft(Constantes.LargoLongitudMensaje, '0');
-            e2 = opcion.ToString() + e1;
-            byte[] parteFija = Encoding.UTF8.GetBytes(e2);
             try
             {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensajeServidor);
+                manejoDataSocket.Send(opcion);
+                manejoDataSocket.Send(mensaje);
 
-                byte[] largoParteFijaRespuesta = manejoDataSocket.Receive(Constantes.LargoParteFija);
-                string parteFijaRespuesta = Encoding.UTF8.GetString(largoParteFijaRespuesta);
-                byte[] dataRespuesta = manejoDataSocket.Receive(int.Parse(parteFijaRespuesta.Substring(3)));
-                string mensajeUsuarioRespuesta = Encoding.UTF8.GetString(dataRespuesta);
+                string parteFijaRespuesta = await manejoDataSocket.Recieve();
+                string mensajeUsuarioRespuesta = await manejoDataSocket.Recieve();
 
                 Console.WriteLine(mensajeUsuarioRespuesta);
                 return parteFijaRespuesta.Substring(0, 2) + ":" + mensajeUsuarioRespuesta;
             }
             catch (Exception e)
             {
-                throw e;
+                Console.WriteLine($"Exception thrown - Message: {e.Message}");
+                throw new Exception("Exception unhandeled");
             }
         }
         

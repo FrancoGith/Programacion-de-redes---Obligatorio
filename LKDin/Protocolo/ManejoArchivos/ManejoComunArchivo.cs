@@ -9,32 +9,28 @@ namespace Protocolo.ManejoArchivos
 {
     public class ManejoComunArchivo
     {
-        private readonly ManejoSockets _socketHelper;
+        private readonly ManejoStreamsHelper _socketHelper;
 
-        public ManejoComunArchivo(Socket socket)
+        public ManejoComunArchivo(ManejoStreamsHelper socketHelper)
         {
-            _socketHelper = new ManejoSockets(socket);
+            _socketHelper = socketHelper;
         }
 
-        public void SendFile(string path)
+        public async Task SendFile(string path)
         {
             if (VerificacionExistenciaArchivos.FileExists(path))
             {
                 string fileName = VerificacionExistenciaArchivos.GetFileName(path);
                 //---------------- Solo envio el nombre porque necesito la extension
                 // ---> Enviar el largo del nombre del archivo
-                _socketHelper.Send(ManejoConversiones.ConvertIntToBytes(fileName.Length));
+                await _socketHelper.Send(fileName.Length.ToString());
                 // ---> Enviar el nombre del archivo
-                _socketHelper.Send(ManejoConversiones.ConvertStringToBytes(fileName));
+                await _socketHelper.Send(fileName);
 
-                // ---> Obtener el tamaño del archivo
-
-                // falla en el long fileSize linea 30 manejocomunarchivo
-
+                // ---> Obtener el tamaño del 
                 long fileSize = VerificacionExistenciaArchivos.GetFileSize(path);
                 // ---> Enviar el tamaño del archivo
-                byte[] convertedFileSize = ManejoConversiones.ConvertLongToBytes(fileSize);
-                _socketHelper.Send(convertedFileSize);
+                await _socketHelper.Send(fileSize.ToString());
                 // ---> Enviar el archivo (pero con file stream)
                 SendFileWithStream(fileSize, path);
             }
@@ -44,25 +40,23 @@ namespace Protocolo.ManejoArchivos
             }
         }
 
-        public string RecibirArchivo(string _nombreArchivo)
+        public async Task<string> RecibirArchivo(string _nombreArchivo)
         {
-            // --------------------------------------------------No me importa el nombre porque lo sobrescribo
+            // --------------------------------------------------No me importa el **nombre** porque lo sobrescribo, pero si la extension
             // ---> Recibir el largo del nombre del archivo
-            int fileNameSize = ManejoConversiones.ConvertBytesToInt(
-            _socketHelper.Receive(ManejoTamanoArchivos.FixedDataSize));
+            await _socketHelper.Recieve();
             // ---> Recibir el nombre del archivo
-             string fileName = ManejoConversiones.ConvertBytesToString(_socketHelper.Receive(fileNameSize));
-            // ---> Recibir el largo del archivo
+            string fileName = await _socketHelper.Recieve();
             string extension = Path.GetExtension(fileName);
-            long fileSize = ManejoConversiones.ConvertBytesToLong(
-            _socketHelper.Receive(ManejoTamanoArchivos.FixedFileSize));
+            // ---> Recibir el largo del archivo
+            long fileSize = long.Parse(await _socketHelper.Recieve());
             // ---> Recibir el archivo
             string archivoAGuardar = _nombreArchivo + extension;
             ReceiveFileWithStreams(fileSize, archivoAGuardar);
             return archivoAGuardar;
         }
 
-        private void SendFileWithStream(long fileSize, string path)
+        private async Task SendFileWithStream(long fileSize, string path)
         {
             long fileParts = ManejoTamanoArchivos.CalcularCantidadDePartes(fileSize);
             long offset = 0;
@@ -89,12 +83,12 @@ namespace Protocolo.ManejoArchivos
                     offset += ManejoTamanoArchivos.MaxPacketSize;
                 }
 
-                _socketHelper.Send(data); //3- Envío ese segmento a travez de la red
+                await _socketHelper.Send(ManejoConversiones.ConvertBytesToString(data)); //3- Envío ese segmento a travez de la red
                 currentPart++;
             }
         }
 
-        private void ReceiveFileWithStreams(long fileSize, string fileName)
+        private async void ReceiveFileWithStreams(long fileSize, string fileName)
         {
             long fileParts = ManejoTamanoArchivos.CalcularCantidadDePartes(fileSize);
             long offset = 0;
@@ -109,13 +103,13 @@ namespace Protocolo.ManejoArchivos
                 {
                     //1.1 - Si es, recibo la ultima parte
                     int lastPartSize = (int)(fileSize - offset);
-                    data = _socketHelper.Receive(lastPartSize);
+                    data = ManejoConversiones.ConvertStringToBytes(await _socketHelper.Recieve());
                     offset += lastPartSize;
                 }
                 else
                 {
                     //2.2- Si no, recibo una parte cualquiera
-                    data = _socketHelper.Receive(ManejoTamanoArchivos.MaxPacketSize);
+                    data = ManejoConversiones.ConvertStringToBytes(await _socketHelper.Recieve());
                     offset += ManejoTamanoArchivos.MaxPacketSize;
                 }
                 //3- Escribo esa parte del archivo a disco
