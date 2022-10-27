@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -32,7 +33,7 @@ namespace Protocolo.ManejoArchivos
                 // ---> Enviar el tamaño del archivo
                 await _socketHelper.Send(fileSize.ToString());
                 // ---> Enviar el archivo (pero con file stream)
-                SendFileWithStream(fileSize, path);
+                await SendFileWithStream(fileSize, path);
             }
             else
             {
@@ -52,7 +53,7 @@ namespace Protocolo.ManejoArchivos
             long fileSize = long.Parse(await _socketHelper.Recieve());
             // ---> Recibir el archivo
             string archivoAGuardar = _nombreArchivo + extension;
-            ReceiveFileWithStreams(fileSize, archivoAGuardar);
+            await ReceiveFileWithStreams(fileSize, archivoAGuardar);
             return archivoAGuardar;
         }
 
@@ -88,7 +89,7 @@ namespace Protocolo.ManejoArchivos
             }
         }
 
-        private async void ReceiveFileWithStreams(long fileSize, string fileName)
+        private async Task ReceiveFileWithStreams(long fileSize, string fileName)
         {
             long fileParts = ManejoTamanoArchivos.CalcularCantidadDePartes(fileSize);
             long offset = 0;
@@ -116,6 +117,7 @@ namespace Protocolo.ManejoArchivos
                 ManejoFileStream.Write(fileName, data);
                 currentPart++;
             }
+
         }
     }
 }
