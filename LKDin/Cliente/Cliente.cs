@@ -408,15 +408,51 @@ namespace Cliente
             }
         }
 
-        private static async Task Mensajes(ManejoStreamsHelper manejoDataSocket, string emisor)
+
+        private static async Task Mensajes(ManejoStreamsHelper manejoStreamsHelper, string emisor)
+        {
+            Console.WriteLine(
+            @"Elija una opción: 
+                1 - Enviar un mensaje
+                2 - Leer mensajes"
+            );
+
+            int opcion = 0;
+            while (opcion != 1 || opcion != 2)
+            {
+                try
+                {
+                    opcion = int.Parse(Console.ReadLine());
+
+                    switch (opcion)
+                    {
+                        case 1:
+                            await EnviarMensajes(manejoStreamsHelper, emisor);
+                            break;
+                        case 2:
+                            await LeerMensajes(manejoStreamsHelper, emisor);
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Ingrese una opción válida");
+                }
+            }
+        }
+
+        private static async Task LeerMensajes(ManejoStreamsHelper manejoStreamsHelper, string emisor)
+        { 
+        }
+
+        private static async Task EnviarMensajes(ManejoStreamsHelper manejoStreamsHelper, string emisor)
         {
             //Solicito la
             //de usuarios
-            // TODO: refactor REFACTOR YA CULIAO
 
             try
             {
-                manejoDataSocket.Send("600000");
+                manejoStreamsHelper.Send("600000");
             }
             catch (Exception e)
             {
@@ -425,8 +461,8 @@ namespace Cliente
             }
 
             //Recibo la lista de usuarios
-            string respuesta = await manejoDataSocket.Recieve();
-            string listaUsuarios = await manejoDataSocket.Recieve();
+            string respuesta = await manejoStreamsHelper.Recieve();
+            string listaUsuarios = await manejoStreamsHelper.Recieve();
 
             List<string> usuarios = listaUsuarios.Split(Constantes.CaracterSeparadorListas).ToList<string>();
 
@@ -467,8 +503,8 @@ namespace Cliente
 
             try
             {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensaje);
+                manejoStreamsHelper.Send(parteFija);
+                manejoStreamsHelper.Send(mensaje);
             }
             catch (Exception e)
             {
@@ -477,8 +513,8 @@ namespace Cliente
             }
 
             //Recibo el historial de mensajes
-            respuesta = await manejoDataSocket.Recieve();
-            string listaMensajes = await manejoDataSocket.Recieve();
+            respuesta = await manejoStreamsHelper.Recieve();
+            string listaMensajes = await manejoStreamsHelper.Recieve();
             string[] mensajes = listaMensajes.Split(Constantes.CaracterSeparadorListas);
 
             //Escribo mensajes anteriores
@@ -501,8 +537,8 @@ namespace Cliente
 
             try
             {
-                manejoDataSocket.Send(chatParteFija);
-                manejoDataSocket.Send(mensajeChat);
+                manejoStreamsHelper.Send(chatParteFija);
+                manejoStreamsHelper.Send(mensajeChat);
             }
             catch (Exception e)
             {
