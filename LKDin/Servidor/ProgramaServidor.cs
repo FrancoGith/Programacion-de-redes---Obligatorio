@@ -415,6 +415,7 @@ namespace Servidor
             HistorialChat chatActivo = datosServidor.GetHistorial(contenido);
 
             chatActivo.ultimoEnHablar = contenido[0];
+            chatActivo.visto = false;
             chatActivo.mensajes.Add(contenido[0] + " dice: " + contenido[2]);
         }
 
