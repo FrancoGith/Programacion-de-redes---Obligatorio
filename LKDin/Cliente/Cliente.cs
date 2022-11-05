@@ -417,6 +417,7 @@ namespace Cliente
             try
             {
                 manejoDataSocket.Send("600000");
+                manejoDataSocket.Send("");
             }
             catch (Exception e)
             {
