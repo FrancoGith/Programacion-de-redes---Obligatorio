@@ -546,8 +546,8 @@ namespace Cliente
 
             try
             {
-                manejoStreamsHelper.Send("600000");
-                manejoStreamsHelper.Send("");
+                await manejoStreamsHelper.Send("600000");
+                await manejoStreamsHelper.Send("");
             }
             catch (Exception e)
             {
@@ -598,8 +598,8 @@ namespace Cliente
 
             try
             {
-                manejoStreamsHelper.Send(parteFija);
-                manejoStreamsHelper.Send(mensaje);
+                await manejoStreamsHelper.Send(parteFija);
+                await manejoStreamsHelper.Send(mensaje);
             }
             catch (Exception e)
             {
