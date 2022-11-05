@@ -627,8 +627,8 @@ namespace Cliente
 
             try
             {
-                manejoStreamsHelper.Send(chatParteFija);
-                manejoStreamsHelper.Send(mensajeChat);
+                await manejoStreamsHelper.Send(chatParteFija);
+                await manejoStreamsHelper.Send(mensajeChat);
             }
             catch (Exception e)
             {
@@ -682,8 +682,8 @@ namespace Cliente
         {
             try
             {
-                manejoDataSocket.Send(opcion);
-                manejoDataSocket.Send(mensaje);
+                await manejoDataSocket.Send(opcion);
+                await manejoDataSocket.Send(mensaje);
 
                 string parteFijaRespuesta = await manejoDataSocket.Recieve();
                 string mensajeUsuarioRespuesta = await manejoDataSocket.Recieve();
