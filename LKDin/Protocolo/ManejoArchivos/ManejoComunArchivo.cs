@@ -73,14 +73,14 @@ namespace Protocolo.ManejoArchivos
                     int lastPartSize = (int)(fileSize - offset);
                     //1- Leo de disco el último segmento
                     //2- Guardo el último segmento en un buffer
-                    data = ManejoFileStream.Read(path, offset, lastPartSize); //Puntos 1 y 2
+                    data = await ManejoFileStream.Read(path, offset, lastPartSize); //Puntos 1 y 2
                     offset += lastPartSize;
                 }
                 else
                 {
                     //1- Leo de disco el segmento
                     //2- Guardo ese segmento en un buffer
-                    data = ManejoFileStream.Read(path, offset, ManejoTamanoArchivos.MaxPacketSize);
+                    data = await ManejoFileStream.Read(path, offset, ManejoTamanoArchivos.MaxPacketSize);
                     offset += ManejoTamanoArchivos.MaxPacketSize;
                 }
 
@@ -114,7 +114,7 @@ namespace Protocolo.ManejoArchivos
                     offset += ManejoTamanoArchivos.MaxPacketSize;
                 }
                 //3- Escribo esa parte del archivo a disco
-                ManejoFileStream.Write(fileName, data);
+                await ManejoFileStream.Write(fileName, data);
                 currentPart++;
             }
 

@@ -277,7 +277,7 @@ namespace Cliente
 
         }
 
-        private async static Task AsociarFotoDePerfilATrabajo(ManejoStreamsHelper manejoStreams)
+        private static async Task AsociarFotoDePerfilATrabajo(ManejoStreamsHelper manejoStreams)
         {
             Console.WriteLine("Asociar foto a un perfil de trabajo");
             Console.WriteLine("Ingrese el nombre del usuario del perfil a modificar:");
@@ -416,8 +416,8 @@ namespace Cliente
 
             try
             {
-                manejoDataSocket.Send("600000");
-                manejoDataSocket.Send("");
+                await manejoDataSocket.Send("600000");
+                await manejoDataSocket.Send("");
             }
             catch (Exception e)
             {
@@ -468,8 +468,8 @@ namespace Cliente
 
             try
             {
-                manejoDataSocket.Send(parteFija);
-                manejoDataSocket.Send(mensaje);
+                await manejoDataSocket.Send(parteFija);
+                await manejoDataSocket.Send(mensaje);
             }
             catch (Exception e)
             {
@@ -502,8 +502,8 @@ namespace Cliente
 
             try
             {
-                manejoDataSocket.Send(chatParteFija);
-                manejoDataSocket.Send(mensajeChat);
+                await manejoDataSocket.Send(chatParteFija);
+                await manejoDataSocket.Send(mensajeChat);
             }
             catch (Exception e)
             {
@@ -557,8 +557,8 @@ namespace Cliente
         {
             try
             {
-                manejoDataSocket.Send(opcion);
-                manejoDataSocket.Send(mensaje);
+                await manejoDataSocket.Send(opcion);
+                await manejoDataSocket.Send(mensaje);
 
                 string parteFijaRespuesta = await manejoDataSocket.Recieve();
                 string mensajeUsuarioRespuesta = await manejoDataSocket.Recieve();
