@@ -418,7 +418,7 @@ namespace Cliente
             );
 
             int opcion = 0;
-            while (opcion != 1 || opcion != 2)
+            while (opcion != 1 && opcion != 2)
             {
                 try
                 {
@@ -442,17 +442,112 @@ namespace Cliente
         }
 
         private static async Task LeerMensajes(ManejoStreamsHelper manejoStreamsHelper, string emisor)
-        { 
+        {
+            //Solicito la lista de usuarios
+
+            string mensaje = emisor;
+            string parteFija = "63";
+
+            try
+            {
+                manejoStreamsHelper.Send(parteFija);
+                manejoStreamsHelper.Send(mensaje);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo la lista de usuarios
+            string respuesta = await manejoStreamsHelper.Recieve();
+            string listaUsuarios = await manejoStreamsHelper.Recieve();
+
+            List<string> usuarios = listaUsuarios.Split(Constantes.CaracterSeparadorListas).ToList<string>();
+
+            usuarios.RemoveAt(usuarios.Count - 1); //El último elemento siempre es vacío por el formato con el que viene,
+                                                   //entonces acá lo saco, es medio hacky pero evita que tengamos
+                                                   //que hacer try catch más adelante
+
+            Console.WriteLine("Usuarios existentes: \n");
+            for (int i = 0; i < usuarios.Count; i++)
+            {
+                List<string> nombre = usuarios[i].Split(Constantes.CaracterSeparador).ToList();
+
+                if (nombre[1] == "1")
+                {
+                    Console.WriteLine(i + " - " + nombre[0] + "[MENSAJES SIN LEER]");
+                }
+                else
+                {
+                    Console.WriteLine(i + " - " + nombre[0]);
+                }
+            }
+
+            string destinatario = string.Empty;
+            bool formatoOk = false;
+
+            Console.WriteLine("Seleccione mensajes a leer: ");
+            while (!formatoOk)
+            {
+                try
+                {
+                    destinatario = usuarios[int.Parse(Console.ReadLine())];
+                    //Destinatario incluye el nombre de usuario, el caracter separador, y un 1 o un 0.
+                    //Esto es por como quedó la string, que la usé para saber si tiene notificaciones o no
+                    destinatario = destinatario.Substring(0, 2);
+                    formatoOk = true;
+                }
+                catch (FormatException a)
+                {
+                    Console.WriteLine("Por favor ingrese un número");
+                }
+                catch (ArgumentOutOfRangeException b)
+                {
+                    Console.WriteLine("El número de usuario ingresado no existe");
+                }
+            }
+
+            //pedirle al servidor el chat con el destinatario
+            mensaje = emisor + Constantes.CaracterSeparadorListas + destinatario;
+            parteFija = "61";
+
+            try
+            {
+                manejoStreamsHelper.Send(parteFija);
+                manejoStreamsHelper.Send(mensaje);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //Recibo el historial de mensajes
+            respuesta = await manejoStreamsHelper.Recieve();
+            string listaMensajes = await manejoStreamsHelper.Recieve();
+            string[] mensajes = listaMensajes.Split(Constantes.CaracterSeparadorListas);
+
+            
+            //Escribo mensajes anteriores
+            Console.Clear();
+            Console.WriteLine("Mensajes con " + destinatario);
+            Console.WriteLine("Iniciaste sesión como " + emisor);
+            Console.WriteLine("-   -   -   -   -   -   -   -");
+            foreach (string mensajeHistorialChat in mensajes)
+            {
+                Console.WriteLine(mensajeHistorialChat);
+            }
         }
 
         private static async Task EnviarMensajes(ManejoStreamsHelper manejoStreamsHelper, string emisor)
         {
-            //Solicito la
-            //de usuarios
+            //Solicito la lista de usuarios
 
             try
             {
                 manejoStreamsHelper.Send("600000");
+                manejoStreamsHelper.Send("");
             }
             catch (Exception e)
             {
@@ -517,15 +612,10 @@ namespace Cliente
             string listaMensajes = await manejoStreamsHelper.Recieve();
             string[] mensajes = listaMensajes.Split(Constantes.CaracterSeparadorListas);
 
-            //Escribo mensajes anteriores
-            Console.Clear();
-            Console.WriteLine("Mensajes con " + destinatario);
+            //Imprimo texto a mostrar en pantalla
+            Console.WriteLine("Escribiendo un mensaje a " + destinatario);
             Console.WriteLine("Iniciaste sesión como " + emisor);
             Console.WriteLine("-   -   -   -   -   -   -   -");
-            foreach (string mensajeHistorialChat in mensajes)
-            {
-                Console.WriteLine(mensajeHistorialChat);
-            }
 
             //Enviar un mensaje
             string textoChat = Console.ReadLine();

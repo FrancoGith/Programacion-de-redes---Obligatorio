@@ -10,6 +10,8 @@ namespace Dominio.Mensajes
     {
         public (string, string) usuarios;
         public List<string> mensajes;
+        public string ultimoEnHablar;
+        public bool visto;
 
         public HistorialChat()
         { 

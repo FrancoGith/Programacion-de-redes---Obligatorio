@@ -68,5 +68,11 @@ namespace Servidor
         {
             return ListaHistoriales.FirstOrDefault(x => x.usuarios.Equals((usuarios[0], usuarios[1])) || x.usuarios.Equals((usuarios[1], usuarios[0])));
         }
+
+        public List<HistorialChat> GetHistoriales(string usuario)
+        {
+            return ListaHistoriales.Where(x => x.usuarios.Item1 == usuario || x.usuarios.Item2 == usuario).ToList();
+
+        }
     }
 }

@@ -13,6 +13,7 @@ using System.Threading;
 using System.Linq;
 using Dominio.Mensajes;
 using System.Security.Policy;
+using System.Runtime.CompilerServices;
 
 namespace Servidor
 {
@@ -100,7 +101,10 @@ namespace Servidor
                                 await DevolverHistorialChat(manejoDataSocket, mensajeUsuario);
                                 break;
                             case 62:
-                                Mensajes(manejoDataSocket, mensajeUsuario);
+                                await Mensajes(manejoDataSocket, mensajeUsuario);
+                                break;
+                            case 63:
+                                await DevolverListaNoLeidos(manejoDataSocket, mensajeUsuario);
                                 break;
                             default:
                                 break;
@@ -345,6 +349,33 @@ namespace Servidor
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
         }
 
+        private static async Task DevolverListaNoLeidos(ManejoStreamsHelper manejoDataSocket, string nombreUsuario)
+        {
+            string mensaje = string.Empty;
+
+            foreach (Usuario Usuario in datosServidor.GetUsuarios())
+            {
+                mensaje += Usuario.Username;
+                mensaje += Constantes.CaracterSeparador;
+
+                string[] nombres = { nombreUsuario, Usuario.Username };
+                HistorialChat historial = datosServidor.GetHistorial(nombres);
+
+                if (historial != null && historial.ultimoEnHablar != nombreUsuario && historial.visto == false)
+                {
+                    mensaje += 1;
+                }
+                else
+                {
+                    mensaje += 0;
+                }
+
+                mensaje += Constantes.CaracterSeparadorListas;
+            }
+
+            await EnviarMensajeCliente(manejoDataSocket, mensaje, "63");
+        }
+
         private static async Task DevolverHistorialChat(ManejoStreamsHelper manejoDataSocket, string cuerpo)
         {
             string[] usuarios = cuerpo.Split(Constantes.CaracterSeparadorListas);
@@ -360,6 +391,11 @@ namespace Servidor
 
                 datosServidor.AgregarHistorial(historialDevolver);
             }
+            //Esto es para marcar como leido
+            else if (usuarios[1].Equals(historialDevolver.ultimoEnHablar))
+            {
+                historialDevolver.visto = true;
+            }
 
             string mensaje = "";
 
@@ -371,13 +407,14 @@ namespace Servidor
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
         }
 
-        private static void Mensajes(ManejoStreamsHelper socketCliente, string mensaje)
+        private static async Task Mensajes(ManejoStreamsHelper socketCliente, string mensaje)
         {
             //[emisor, receptor, texto del mensaje]
             string[] contenido = mensaje.Split(Constantes.CaracterSeparador);
 
             HistorialChat chatActivo = datosServidor.GetHistorial(contenido);
 
+            chatActivo.ultimoEnHablar = contenido[0];
             chatActivo.mensajes.Add(contenido[0] + " dice: " + contenido[2]);
         }
 
