@@ -310,7 +310,7 @@ namespace Cliente
                 }
                 try
                 {
-                    ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoStreams);
+                    ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoStreams.stream.Socket);
                     await fileCommonHandler.SendFile(abspath);
                 } catch (Exception e)
                 {
@@ -398,8 +398,8 @@ namespace Cliente
                 string[] respuestaServidor2 = mensajeServidor.Substring(3).Split(Constantes.CaracterSeparador);
                 if (codigoServidor == "52")
                 {
-                    ManejoComunArchivo manejo = new ManejoComunArchivo(manejoStreams);
-                    await manejo.RecibirArchivo(respuestaServidor2[1]);
+                    ManejoComunArchivo manejo = new ManejoComunArchivo(manejoStreams.stream.Socket);
+                    await manejo.RecieveFile(respuestaServidor2[1]);
                 }
             } 
             else

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Protocolo.ManejoArchivos
 {
-    internal static class VerificacionExistenciaArchivos
+    public static class VerificacionExistenciaArchivos
     {
         public static bool FileExists(string path)
         {
