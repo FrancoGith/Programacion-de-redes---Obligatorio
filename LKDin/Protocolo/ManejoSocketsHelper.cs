@@ -6,11 +6,11 @@ namespace Protocolo
 {
     public class ManejoStreamsHelper
     {
-        private readonly NetworkStream _stream;
+        public readonly NetworkStream stream;
 
         public ManejoStreamsHelper(NetworkStream stream)
         {
-            _stream = stream;
+            this.stream = stream;
         }
 
         public async Task Send(string mensaje)
@@ -18,9 +18,9 @@ namespace Protocolo
             byte[] data = Encoding.UTF8.GetBytes(mensaje);
             byte[] dataLength = BitConverter.GetBytes(data.Length);
 
-            await _stream.WriteAsync(dataLength, 0, Constantes.LargoLongitudMensaje);
+            await stream.WriteAsync(dataLength, 0, Constantes.LargoLongitudMensaje);
 
-            await _stream.WriteAsync(data, 0, data.Length);
+            await stream.WriteAsync(data, 0, data.Length);
         }
 
         public async Task<string> Recieve()
@@ -29,7 +29,7 @@ namespace Protocolo
             int totalReceived = 0;
             while (totalReceived < Constantes.LargoLongitudMensaje)
             {
-                var received = await _stream.ReadAsync(dataLength, totalReceived, Constantes.LargoLongitudMensaje - totalReceived);
+                var received = await stream.ReadAsync(dataLength, totalReceived, Constantes.LargoLongitudMensaje - totalReceived);
                 if (received == 0)
                 {
                     throw new SocketException();
@@ -41,7 +41,7 @@ namespace Protocolo
             totalReceived = 0;
             while (totalReceived < length)
             {
-                int received = await _stream.ReadAsync(data, totalReceived, length - totalReceived);
+                int received = await stream.ReadAsync(data, totalReceived, length - totalReceived);
                 if (received == 0)
                 {
                     throw new SocketException();

@@ -186,11 +186,17 @@ namespace Servidor
 
             if (codigo == "31")
             {
-                ManejoComunArchivo manejo = new ManejoComunArchivo(manejoDataSocket);
+                ManejoComunArchivo manejo = new ManejoComunArchivo(manejoDataSocket.stream.Socket);
                 string nombreArchivo = $"imagenes\\foto{nombreUsuario}";
+                string pathApp = Directory.GetCurrentDirectory();
+                string absPath = Path.Combine(pathApp, perfilUsuario.Foto);
+                if (VerificacionExistenciaArchivos.FileExists(absPath))
+                {
+                    File.Delete(perfilUsuario.Foto);
+                }
                 try
                 {
-                    perfilUsuario.Foto = await manejo.RecibirArchivo(nombreArchivo);
+                    perfilUsuario.Foto = await manejo.RecieveFile(nombreArchivo);
                 } 
                 catch (Exception e)
                 {
@@ -324,7 +330,7 @@ namespace Servidor
                 string absPath = Path.Combine(pathApp, perfil.Foto);
                 string nombreArchivo = "imagenes\\" + Path.GetFileNameWithoutExtension(perfil.Foto);
                 await EnviarMensajeCliente(manejoDataSocket, "Ok" + Constantes.CaracterSeparador + nombreArchivo, "52");
-                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoDataSocket);
+                ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoDataSocket.stream.Socket);
                 await fileCommonHandler.SendFile(absPath);
             } 
             else
