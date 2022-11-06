@@ -101,7 +101,7 @@ namespace Servidor
                                 await DevolverHistorialChat(manejoDataSocket, mensajeUsuario);
                                 break;
                             case 62:
-                                await Mensajes(manejoDataSocket, mensajeUsuario);
+                                Mensajes(manejoDataSocket, mensajeUsuario);
                                 break;
                             case 63:
                                 await DevolverListaNoLeidos(manejoDataSocket, mensajeUsuario);
@@ -407,7 +407,7 @@ namespace Servidor
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
         }
 
-        private static async Task Mensajes(ManejoStreamsHelper socketCliente, string mensaje)
+        private static void Mensajes(ManejoStreamsHelper socketCliente, string mensaje)
         {
             //[emisor, receptor, texto del mensaje]
             string[] contenido = mensaje.Split(Constantes.CaracterSeparador);

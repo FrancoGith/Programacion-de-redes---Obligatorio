@@ -450,8 +450,8 @@ namespace Cliente
 
             try
             {
-                manejoStreamsHelper.Send(parteFija);
-                manejoStreamsHelper.Send(mensaje);
+                await manejoStreamsHelper.Send(parteFija);
+                await manejoStreamsHelper.Send(mensaje);
             }
             catch (Exception e)
             {
@@ -514,8 +514,8 @@ namespace Cliente
 
             try
             {
-                manejoStreamsHelper.Send(parteFija);
-                manejoStreamsHelper.Send(mensaje);
+                await manejoStreamsHelper.Send(parteFija);
+                await manejoStreamsHelper.Send(mensaje);
             }
             catch (Exception e)
             {
