@@ -3,6 +3,7 @@ using Dominio.Mensajes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,6 +11,22 @@ namespace Servidor
 {
     public class DatosServidor
     {
+
+        private static DatosServidor instanciaDatos;
+        private static readonly object singletonLock = new object();
+
+        public static DatosServidor GetInstancia()
+        {
+            lock (singletonLock)
+            {
+                if (instanciaDatos == null)
+                {
+                    instanciaDatos = new DatosServidor();
+                }
+            }
+            return instanciaDatos;
+        }
+
         private List<Usuario>? Usuarios { get; set; }
         private List<PerfilTrabajo>? PerfilesTrabajo { get; set; }
         private List<HistorialChat>? ListaHistoriales { get; set; }
@@ -20,11 +37,24 @@ namespace Servidor
             ListaHistoriales = new List<HistorialChat>();
         }
 
+        public List<Usuario> ObtenerUsuarios()
+        {
+            return Usuarios;
+        }
+
         public void AgregarUsuario(string username, string password)
         {
             lock (Usuarios)
             {
                 Usuarios.Add(new Usuario() { Username = username, Password = password });
+            }
+        }
+
+        public void EliminarUsuario(string username)
+        {
+            lock (Usuarios)
+            {
+                Usuarios.RemoveAll(u => u.Username == username);
             }
         }
 

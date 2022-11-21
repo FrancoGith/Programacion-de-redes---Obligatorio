@@ -1,29 +1,27 @@
 ﻿using Dominio;
+using Dominio.Mensajes;
 using Protocolo;
 using Protocolo.ManejoArchivos;
-using System;
 using System.Data;
-using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
-using System.Linq;
-using Dominio.Mensajes;
-using System.Security.Policy;
-using System.Runtime.CompilerServices;
 
 namespace Servidor
 {
     class ProgramaServidor
     {
         static readonly SettingsManager settingsManager = new SettingsManager();
-
         private static DatosServidor datosServidor = new DatosServidor();
+        private readonly TcpListener tcpListener;
+        private bool aceptandoConexiones;
 
-        static async Task Main(string[] args)
+        string serverIP = settingsManager.ReadSettings(ServerConfig.serverIPconfigKey);
+        int serverPort = int.Parse(settingsManager.ReadSettings(ServerConfig.serverPortconfigKey));
+        int serverListen = int.Parse(settingsManager.ReadSettings(ServerConfig.serverListenconfigKey));
+        int cantidadClientes = int.Parse(settingsManager.ReadSettings(ServerConfig.serverClientsconfigKey));
+
+
+        public ProgramaServidor()
         {
             datosServidor.AgregarUsuario("U1", "U1");
             datosServidor.AgregarUsuario("U2", "U2");
@@ -33,24 +31,27 @@ namespace Servidor
             datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U2"), new List<string>() { "Python" }, "Backend");
             datosServidor.AgregarPerfilTrabajo(datosServidor.GetUsuario("U3"), new List<string>() { "Java" }, "QA");
 
-            Console.WriteLine("Levantando Servidor");
-
-            string serverIP = settingsManager.ReadSettings(ServerConfig.serverIPconfigKey);
-            int serverPort = int.Parse(settingsManager.ReadSettings(ServerConfig.serverPortconfigKey));
-            int serverListen = int.Parse(settingsManager.ReadSettings(ServerConfig.serverListenconfigKey));
-            int cantidadClientes = int.Parse(settingsManager.ReadSettings(ServerConfig.serverClientsconfigKey));
-
             var endpoint = new IPEndPoint(IPAddress.Parse(serverIP), serverPort);
+            tcpListener = new TcpListener(endpoint);
+            aceptandoConexiones = true;
 
-            TcpListener tcpListener = new TcpListener(endpoint);
+            Console.WriteLine($"Servidor en la dirección {serverIP} y puerto {serverPort}");
+        }
 
+        public async Task ComenzarRecibirConexiones()
+        {
             tcpListener.Start(cantidadClientes);
-
-            while (true)
+            while (aceptandoConexiones)
             {
-                var tcpClientSocket = await tcpListener.AcceptTcpClientAsync();
-                Console.WriteLine("Cliente conectado");
-                Task task = Task.Run(async () => await ManejarCliente(tcpClientSocket));
+                try
+                {
+                    var tcpClientSocket = await tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                    Task task = Task.Run(async () => await ManejarCliente(tcpClientSocket).ConfigureAwait(false));
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine("No se aceptan peticiones");
+                }
             }
         }
 
@@ -134,7 +135,7 @@ namespace Servidor
                 await EnviarMensajeCliente(manejoDataSocket, "Usuario creado", "11");
                 Console.WriteLine("Se ha creado un nuevo usuario");
             }
-        }   
+        }
 
         private static async Task AltaDePerfilDeTrabajo(ManejoStreamsHelper manejoDataSocket, string mensajeUsuario)
         {
@@ -180,8 +181,9 @@ namespace Servidor
             PerfilTrabajo perfilUsuario = datosServidor.GetPerfilTrabajo(nombreUsuario);
             string codigo = "31";
             string mensaje = "Usuario existente";
-            
-            if (perfilUsuario == null) {
+
+            if (perfilUsuario == null)
+            {
                 codigo = "32";
                 mensaje = "Usuario no existente";
             }
@@ -201,7 +203,7 @@ namespace Servidor
                 try
                 {
                     perfilUsuario.Foto = await manejo.RecieveFile(nombreArchivo);
-                } 
+                }
                 catch (Exception e)
                 {
                     await EnviarMensajeCliente(manejoDataSocket, e.Message, "00");
@@ -210,7 +212,7 @@ namespace Servidor
                 }
                 await EnviarMensajeCliente(manejoDataSocket, "El servidor recibio el archivo", "33");
                 Console.WriteLine("Se ha recibido un archivo");
-                
+
             }
             else
             {
@@ -320,14 +322,14 @@ namespace Servidor
             try
             {
                 perfil = datosServidor.GetPerfilTrabajo(nombreUsuario);
-            } 
-            catch(Exception e)
+            }
+            catch (Exception e)
             {
                 await EnviarMensajeCliente(manejoDataSocket, "Perfil de trabajo no existente", "53");
                 Console.WriteLine(e.Message);
                 return;
             }
-            
+
             if (perfil.Foto != String.Empty)
             {
                 string pathApp = Directory.GetCurrentDirectory();
@@ -336,13 +338,13 @@ namespace Servidor
                 await EnviarMensajeCliente(manejoDataSocket, "Ok" + Constantes.CaracterSeparador + nombreArchivo, "52");
                 ManejoComunArchivo fileCommonHandler = new ManejoComunArchivo(manejoDataSocket.stream.Socket);
                 await fileCommonHandler.SendFile(absPath);
-            } 
+            }
             else
             {
                 await EnviarMensajeCliente(manejoDataSocket, "Este perfil de trabajo no tiene ninguna foto asociada", "54");
             }
         }
-        
+
         private static async Task DevolverListaUsuarios(ManejoStreamsHelper manejoDataSocket)
         {
             string mensaje = "";
@@ -429,7 +431,7 @@ namespace Servidor
         {
             return int.Parse(mensajeUsuario.Substring(0, Constantes.LargoCodigo));
         }
-        
+
         private static async Task EnviarMensajeCliente(ManejoStreamsHelper manejoDataSocket, string mensaje, string code)
         {
             try
