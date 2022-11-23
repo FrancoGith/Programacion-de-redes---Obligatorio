@@ -5,7 +5,7 @@ namespace LogServerData
     public class LogData
     {
         private static LogData _instance;
-        private static object _singletonPadlock;
+        private static object _singletonPadlock = new object();
 
         private List<Log> _logs;
 
