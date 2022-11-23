@@ -1,5 +1,4 @@
 using GrpcServerProgram.Services;
-using Microsoft.AspNetCore.Hosting.Server;
 using Servidor;
 
 var builder = WebApplication.CreateBuilder(args);
