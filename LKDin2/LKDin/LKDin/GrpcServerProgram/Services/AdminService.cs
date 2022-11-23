@@ -85,11 +85,11 @@ namespace GrpcServerProgram.Services
                     Message = "Usuario eliminado: " + username.Username,
                 });
             }
-            catch (ArgumentException)
+            catch (ArgumentException error)
             {
                 return Task.FromResult(new MessageReply
                 {
-                    Message = "Usuario inexistente",
+                    Message = error.Message,
                 });
             }
         }

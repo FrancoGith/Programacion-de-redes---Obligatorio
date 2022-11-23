@@ -82,6 +82,9 @@ namespace Servidor
                             case 1:
                                 await LogIn(manejoDataSocket, mensajeUsuario);
                                 break;
+                            case 2:
+                                Logout(mensajeUsuario);
+                                break;
                             case 10:
                                 await AltaDeUsuario(manejoDataSocket, mensajeUsuario);
                                 break;
@@ -236,6 +239,7 @@ namespace Servidor
             if (usuarioLogIn != null && usuarioLogIn.Password == datos[1])
             {
                 codigo = "020000";
+                usuarioLogIn.Conectado = true;
             }
 
             try
@@ -248,6 +252,14 @@ namespace Servidor
                 Console.WriteLine($"Exception thrown - Message: {e.Message}");
                 throw;
             }
+        }
+
+        private static void Logout(string mensaje)
+        {
+            string[] datos = mensaje.Split(Constantes.CaracterSeparador);
+
+            Usuario usuarioLogIn = datosServidor.GetUsuario(datos[0]);
+            usuarioLogIn.Conectado = false;
         }
 
         private static async Task ConsultarPerfilesExistentes(ManejoStreamsHelper socketCliente, string mensajeUsuario)

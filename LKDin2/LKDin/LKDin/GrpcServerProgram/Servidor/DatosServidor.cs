@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Servidor
@@ -65,14 +66,16 @@ namespace Servidor
                 {
                     throw new ArgumentException("Usuario inexistente.");
                 }
+                else if (usuarioEncontrado.Conectado)
+                {
+                    throw new ArgumentException("No se puede eliminar el usuario porque este se encuentra conectado.");
+                }
                 else
                 {
                     Usuarios.RemoveAll(u => u.Username == username);
                 }
             }
         }
-
-        // TODO CHECK ESTOS METODOS
 
         public void EliminarPerfil(string username)
         {
@@ -154,15 +157,49 @@ namespace Servidor
         {
             lock (Usuarios)
             {
+                string nombreViejo = "";
                 Usuario usuarioEncontrado = GetUsuario(userId);
                 if (usuarioEncontrado == null)
                 {
                     throw new ArgumentException("Usuario inexistente.");
                 }
+                else if (usuarioEncontrado.Conectado)
+                {
+                    throw new ArgumentException("No se puede modificar el usuario porque este se encuentra conectado.");
+                }
                 else
                 {
+                    nombreViejo = usuarioEncontrado.Username;
                     usuarioEncontrado.Username = user.Username;
                     usuarioEncontrado.Password = user.Password;
+                }
+            }
+
+            lock (ListaHistoriales)
+            {
+                foreach (HistorialChat historialChat in ListaHistoriales)
+                {
+                    if (historialChat.usuarios.Item1 == userId)
+                    {
+                        historialChat.usuarios.Item1 = user.Username;
+                    }
+                    if (historialChat.usuarios.Item2 == userId)
+                    {
+                        historialChat.usuarios.Item1 = user.Username;
+                    } 
+                    if (historialChat.ultimoEnHablar == userId)
+                    {
+                        historialChat.ultimoEnHablar = user.Username;
+                    }
+
+                    List<string> nuevosMensajes = new();
+
+                    foreach (string mensaje in historialChat.mensajes)
+                    {
+                        var regex = new Regex(Regex.Escape(userId));
+                        nuevosMensajes.Add(regex.Replace(mensaje, user.Username, 1));
+                    }
+                    historialChat.mensajes = nuevosMensajes;
                 }
             }
         }
@@ -192,6 +229,10 @@ namespace Servidor
                 if (perfilEncontrado == null)
                 {
                     throw new ArgumentException("Perfil de trabajo inexistente.");
+                }
+                else if (perfilEncontrado.Foto == "")
+                {
+                    throw new ArgumentException("El perfil no tiene imagen.");
                 }
                 else
                 {

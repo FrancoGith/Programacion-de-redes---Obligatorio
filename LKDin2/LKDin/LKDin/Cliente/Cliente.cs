@@ -112,7 +112,7 @@ namespace Cliente
                                 break;
                             case 0:
                                 exit = true;
-                                Desconexion(tcpClient);
+                                await Desconexion(manejoStreams, tcpClient, username);
                                 break;
                             default:
                                 Console.WriteLine("Ingrese una opción válida");
@@ -495,7 +495,7 @@ namespace Cliente
                     destinatario = usuarios[int.Parse(Console.ReadLine())];
                     //Destinatario incluye el nombre de usuario, el caracter separador, y un 1 o un 0.
                     //Esto es por como quedó la string, que la usé para saber si tiene notificaciones o no
-                    destinatario = destinatario.Substring(0, 2);
+                    destinatario = destinatario.Split(Constantes.CaracterSeparador)[0];
                     formatoOk = true;
                 }
                 catch (FormatException a)
@@ -637,8 +637,21 @@ namespace Cliente
             }
         }            
 
-        private static void Desconexion(TcpClient socketCliente)
+        private static async Task Desconexion(ManejoStreamsHelper manejoStreamsHelper, TcpClient socketCliente, string username)
         {
+            string mensaje = username;
+            string parteFija = "02";
+            try
+            {
+                await manejoStreamsHelper.Send(parteFija);
+                await manejoStreamsHelper.Send(mensaje);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
             socketCliente.Close();
 
             Console.WriteLine("Cliente desconectado");
