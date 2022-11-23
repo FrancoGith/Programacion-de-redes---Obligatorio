@@ -128,7 +128,7 @@ namespace AdminServer.Controllers
             {
                 using var channel = GrpcChannel.ForAddress(grpcURL);
                 adminClient = new Admin.AdminClient(channel);
-                var reply = await adminClient.DeleteUserAsync(new Id { Username = id });
+                var reply = await adminClient.DeleteProfileAsync(new Id { Username = id });
                 return Ok(reply.Message);
             }
             catch (ArgumentException error)

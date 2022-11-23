@@ -19,9 +19,8 @@ service Admin {
 }
 
 message UserDTO {
-	int32 id = 1;
-	string Username = 2;
-	string Password = 3;
+	string Username = 1;
+	string Password = 2;
 }
 
 message ModifyUserDTO {
@@ -31,8 +30,8 @@ message ModifyUserDTO {
 
 message ProfileDTO {
 	string profileUserId = 1;
-	repeated string habilidades = 3;
-	string descripcion = 4;
+	repeated string habilidades = 2;
+	string descripcion = 3;
 }
 
 message ModifyProfileDTO {
