@@ -30,10 +30,9 @@ namespace LogServerLogic
             LogData data = LogData.Instance();
             List<Log> filteredList = data.GetLogs();
 
-            DateTime dateTime = ProcessDateText(filter.DateText);
-
             if (filter.FilterDate)
             {
+                DateTime dateTime = ProcessDateText(filter.DateText);
                 filteredList = FilterByDate(dateTime, filteredList);
             }
             if (filter.FilterCategory)
