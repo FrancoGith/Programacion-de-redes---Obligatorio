@@ -13,6 +13,11 @@ namespace GrpcServerProgram
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(8001, configure => configure.UseHttps());
+            });
+
             // Additional configuration is required to successfully run gRPC on macOS.
             // For instructions on how to configure Kestrel and gRPC clients on macOS, visit https://go.microsoft.com/fwlink/?linkid=2099682
 
