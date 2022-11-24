@@ -1,4 +1,4 @@
-﻿using AdminServer.NewFolder;
+﻿using AdminServer.DTOs;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Mvc;
 using Protocolo;

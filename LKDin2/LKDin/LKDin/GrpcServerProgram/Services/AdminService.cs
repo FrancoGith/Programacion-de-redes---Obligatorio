@@ -2,7 +2,7 @@
 using Google.Protobuf.Collections;
 using Grpc.Core;
 using GrpcServerProgram;
-using Servidor;
+using GrpcServerProgram.Servidor;
 using System.Text.Json;
 
 namespace GrpcServerProgram.Services

@@ -1,4 +1,4 @@
-﻿namespace AdminServer.NewFolder
+﻿namespace AdminServer.DTOs
 {
     public class ProfileMapProtoDTO
     {

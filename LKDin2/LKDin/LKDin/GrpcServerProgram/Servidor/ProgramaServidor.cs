@@ -7,7 +7,7 @@ using System.Data;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Servidor
+namespace GrpcServerProgram.Servidor
 {
     class ProgramaServidor
     {
@@ -32,7 +32,7 @@ namespace Servidor
             datosServidor.AgregarPerfilTrabajo("U1", new List<string>() { "C#", "Java" }, "Programador");
             datosServidor.AgregarPerfilTrabajo("U2", new List<string>() { "Python" }, "Backend");
             datosServidor.AgregarPerfilTrabajo("U3", new List<string>() { "Java" }, "QA");
-            
+
             var endpoint = new IPEndPoint(IPAddress.Parse(serverIP), serverPort);
             tcpListener = new TcpListener(endpoint);
             aceptandoConexiones = true;
@@ -49,7 +49,7 @@ namespace Servidor
             {
                 try
                 {
-                   
+
                     var tcpClientSocket = await tcpListener.AcceptTcpClientAsync();
                     var task = Task.Run(async () => await ManejarCliente(tcpClientSocket));
                 }
@@ -347,7 +347,7 @@ namespace Servidor
                 return;
             }
 
-            if (perfil.Foto != String.Empty)
+            if (perfil.Foto != string.Empty)
             {
                 string pathApp = Directory.GetCurrentDirectory();
                 string absPath = Path.Combine(pathApp, perfil.Foto);

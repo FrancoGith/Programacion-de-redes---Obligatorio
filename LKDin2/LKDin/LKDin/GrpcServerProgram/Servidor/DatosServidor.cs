@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Servidor
+namespace GrpcServerProgram.Servidor
 {
     public class DatosServidor
     {
@@ -186,7 +186,7 @@ namespace Servidor
                     if (historialChat.usuarios.Item2 == userId)
                     {
                         historialChat.usuarios.Item1 = user.Username;
-                    } 
+                    }
                     if (historialChat.ultimoEnHablar == userId)
                     {
                         historialChat.ultimoEnHablar = user.Username;

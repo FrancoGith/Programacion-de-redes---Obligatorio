@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace Protocolo
+namespace Protocolo.ManejoArchivos
 {
     public class ManejoStreamsArchivos
     {

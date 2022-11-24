@@ -1,5 +1,4 @@
-﻿
-namespace Servidor
+﻿namespace GrpcServerProgram.Servidor
 {
     public class ServerConfig
     {
