@@ -453,7 +453,7 @@ namespace Servidor
 
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
 
-            string log = "Solicitado historial de chat entre" + usuarios[0] + " y " + usuarios[1];
+            string log = "Solicitado historial de chat entre " + usuarios[0] + " y " + usuarios[1];
             Console.WriteLine(log);
             LogHelper.PublishLog("Enviar lista no leídos", log);
         }
