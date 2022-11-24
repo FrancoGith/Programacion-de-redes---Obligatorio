@@ -21,21 +21,15 @@ namespace WebApiRabbitMQ.Controllers
         [HttpGet]
         public IActionResult GetFilteredLogs([FromBody]FilterDTO filter)
         {
-            switch (filter.Option)
+            try
             {
-                case 0:
-                    return Ok(_logic.FilterByDate(DateTime.Parse(filter.Text)));
-                    break;
-                case 1:
-                    return Ok(_logic.FilterByCategory(filter.Text));
-                    break;
-                case 2:
-                    return Ok(_logic.FilterByContent(filter.Text));
-                    break;
-                default:
-                    return BadRequest("Codigo de filtro invalido");
-                    break;
+                return Ok(_logic.ApplyFilters(filter));
             }
+            catch (Exception ex)
+            { 
+                return BadRequest(ex.Message);
+            }
+            
         }
     }
 }
