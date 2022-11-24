@@ -25,11 +25,11 @@ namespace LogServerLogic
             return data.GetLogs();
         }
 
-        public List<Log> FilterByUsername(string username)
+        public List<Log> FilterByDate(DateTime date)
         {
             LogData data = LogData.Instance();
 
-            List<Log> filteredList = data.GetLogs().Where(x => x.User == username).ToList();
+            List<Log> filteredList = data.GetLogs().Where(x => x.Date == date).ToList();
             return filteredList;
         }
 

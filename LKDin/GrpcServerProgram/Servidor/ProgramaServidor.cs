@@ -141,7 +141,7 @@ namespace Servidor
                 Console.WriteLine(log);
             }
 
-            LogHelper.PublishLog(datos[0], "Creación usuario", log);
+            LogHelper.PublishLog("Creación usuario", log);
         }
 
         private static async Task AltaDePerfilDeTrabajo(ManejoStreamsHelper manejoDataSocket, string mensajeUsuario)
@@ -173,14 +173,14 @@ namespace Servidor
                         log = "Perfil de trabajo existente para este usuario";
                         Console.WriteLine(log);
                     }
-                    LogHelper.PublishLog(datos[0], "Creación perfil trabajo", log);
+                    LogHelper.PublishLog("Creación perfil trabajo", log);
                 }
                 else
                 {
                     await EnviarMensajeCliente(manejoDataSocket, "Usuario inexistente para crear perfil de trabajo", "21");
                     log = "Usuario inexistente para crear perfil de trabajo";
                     Console.WriteLine(log);
-                    LogHelper.PublishLog("Usuario inexistente", "Creación perfil trabajo", log);
+                    LogHelper.PublishLog("Creación perfil trabajo", log);
                 }
             }
             catch (Exception e)
@@ -224,19 +224,19 @@ namespace Servidor
                     await EnviarMensajeCliente(manejoDataSocket, e.Message, "00");
                     log = "Ocurrió un error al recibir un archivo";
                     Console.WriteLine(log);
-                    LogHelper.PublishLog(nombreUsuario, "Asociación foto perfil", log);
+                    LogHelper.PublishLog("Asociación foto perfil", log);
                     return;
                 }
                 await EnviarMensajeCliente(manejoDataSocket, "El servidor recibio el archivo", "33");
                 log = "Se ha recibido un archivo";
                 Console.WriteLine(log);
-                LogHelper.PublishLog(nombreUsuario, "Asociación foto perfil", log);
+                LogHelper.PublishLog("Asociación foto perfil", log);
             }
             else
             {
                 log = "El usuario ingresado por el cliente no existe";
                 Console.WriteLine(log);
-                LogHelper.PublishLog("Usuario inexistente", "Asociación foto perfil", log);
+                LogHelper.PublishLog("Asociación foto perfil", log);
             }
         }
 
@@ -259,7 +259,7 @@ namespace Servidor
             {
                 await manejoDataSocket.Send(codigo);
                 await manejoDataSocket.Send("");
-                LogHelper.PublishLog(datos[0], "LogIn", log);
+                LogHelper.PublishLog("LogIn", log);
             }
             catch (Exception e)
             {
@@ -315,7 +315,9 @@ namespace Servidor
                 respuestaUsuario = "\nNo se encontraron coincidencias\n";
             }
             await EnviarMensajeCliente(socketCliente, respuestaUsuario, "00");
-            Console.WriteLine("Se han buscado perfiles");
+            string log = "Se han buscado perfiles";
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Consulta perfiles", log);
         }
 
         private static async Task ConsultarPerfilEspecifico(ManejoStreamsHelper socketCliente, string mensajeUsuario)
@@ -335,7 +337,9 @@ namespace Servidor
                 respuestaUsuario = "\nPerfil de trabajo no existente\n";
             }
             await EnviarMensajeCliente(socketCliente, respuestaUsuario, "98");
-            Console.WriteLine("Se ha buscado un perfil especifico");
+            string log = "Se ha buscado un perfil especifico";
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Consulta perfil", log);
 
         }
 
@@ -366,6 +370,10 @@ namespace Servidor
             {
                 await EnviarMensajeCliente(manejoDataSocket, "Este perfil de trabajo no tiene ninguna foto asociada", "54");
             }
+            
+            string log = "Solicitada imagen de perfil";
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Enviar imagen perfil específico", log);
         }
 
         private static async Task DevolverListaUsuarios(ManejoStreamsHelper manejoDataSocket)
@@ -378,6 +386,10 @@ namespace Servidor
             }
 
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
+
+            string log = "Solicitada lista de usuarios";
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Enviar lista de usuarios", log);
         }
 
         private static async Task DevolverListaNoLeidos(ManejoStreamsHelper manejoDataSocket, string nombreUsuario)
@@ -405,6 +417,10 @@ namespace Servidor
             }
 
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "63");
+
+            string log = "Solicitada lista no leídos";
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Enviar lista no leídos", log);
         }
 
         private static async Task DevolverHistorialChat(ManejoStreamsHelper manejoDataSocket, string cuerpo)
@@ -436,6 +452,10 @@ namespace Servidor
             }
 
             await EnviarMensajeCliente(manejoDataSocket, mensaje, "60");
+
+            string log = "Solicitado historial de chat entre" + usuarios[0] + " y " + usuarios[1];
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Enviar lista no leídos", log);
         }
 
         private static void Mensajes(ManejoStreamsHelper socketCliente, string mensaje)
@@ -448,6 +468,10 @@ namespace Servidor
             chatActivo.ultimoEnHablar = contenido[0];
             chatActivo.visto = false;
             chatActivo.mensajes.Add(contenido[0] + " dice: " + contenido[2]);
+
+            string log = contenido[0] + " dice: " + contenido[2];
+            Console.WriteLine(log);
+            LogHelper.PublishLog("Enviar mensaje", log);
         }
 
         private static int ObtenerComando(string mensajeUsuario)
