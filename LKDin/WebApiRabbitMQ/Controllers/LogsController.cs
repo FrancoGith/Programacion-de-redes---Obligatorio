@@ -13,12 +13,6 @@ namespace WebApiRabbitMQ.Controllers
         private LogLogic _logic = new LogLogic();
 
         [HttpGet]
-        public IActionResult GetAllLogs()
-        {
-            return Ok(_logic.GetLogs());
-        }
-
-        [HttpGet]
         public IActionResult GetFilteredLogs([FromBody]FilterDTO filter)
         {
             try
