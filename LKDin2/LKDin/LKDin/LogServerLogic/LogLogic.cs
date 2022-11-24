@@ -63,7 +63,7 @@ namespace LogServerLogic
 
         private List<Log> FilterByContent(string content, List<Log> logs)
         {
-            List<Log> filteredList = logs.Where(x => x.Content == content).ToList();
+            List<Log> filteredList = logs.Where(x => x.Content.Contains(content)).ToList();
             return filteredList;
         }
 
