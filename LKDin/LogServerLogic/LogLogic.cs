@@ -1,6 +1,6 @@
 ﻿using Dominio;
+using DTOs;
 using LogServerData;
-using System.Linq;
 
 namespace LogServerLogic
 {
@@ -25,28 +25,58 @@ namespace LogServerLogic
             return data.GetLogs();
         }
 
-        public List<Log> FilterByDate(DateTime date)
+        public List<Log> ApplyFilters(FilterDTO filter)
         {
             LogData data = LogData.Instance();
+            List<Log> filteredList = data.GetLogs();
 
-            List<Log> filteredList = data.GetLogs().Where(x => x.Date == date).ToList();
+            DateTime dateTime = ProcessDateText(filter.DateText);
+
+            if (filter.FilterDate)
+            {
+                filteredList = FilterByDate(dateTime, filteredList);
+            }
+            if (filter.FilterCategory)
+            {
+                filteredList = FilterByCategory(filter.CategoryText, filteredList);
+            }
+            if (filter.FilterContent)
+            {
+                filteredList = FilterByContent(filter.ContentText, filteredList);
+            }
+
             return filteredList;
         }
 
-        public List<Log> FilterByCategory(string category)
+        private List<Log> FilterByDate(DateTime date, List<Log> logs)
         {
-            LogData data = LogData.Instance();
-
-            List<Log> filteredList = data.GetLogs().Where(x => x.Category == category).ToList();
+            List<Log> filteredList = logs.Where(x => x.Date == date).ToList();
             return filteredList;
         }
 
-        public List<Log> FilterByContent(string content)
+        private List<Log> FilterByCategory(string category, List<Log> logs)
         {
-            LogData data = LogData.Instance();
-
-            List<Log> filteredList = data.GetLogs().Where(x => x.Content == content).ToList();
+            List<Log> filteredList = logs.Where(x => x.Category == category).ToList();
             return filteredList;
+        }
+
+        private List<Log> FilterByContent(string content, List<Log> logs)
+        {
+            List<Log> filteredList = logs.Where(x => x.Content == content).ToList();
+            return filteredList;
+        }
+
+        private DateTime ProcessDateText(string text)
+        {
+            try
+            {
+                DateTime date = Convert.ToDateTime(text);
+                return date;
+            }
+            catch (FormatException)
+            {
+                throw new FormatException("Formato de fecha inválido");
+            }
         }
     }
 }
