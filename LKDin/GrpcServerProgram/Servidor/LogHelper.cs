@@ -7,11 +7,10 @@ namespace GrpcServerProgram.Servidor
 {
     public class LogHelper
     {
-        public static void PublishLog(string username, string category, string content)
+        public static void PublishLog(string category, string content)
         {
             Log log = new Log();
 
-            log.User = username;
             log.Category = category;
             log.Content = content;
 
