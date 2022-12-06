@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+option csharp_namespace = "GrpcServerProgram";
+
+package admin;
+
+service Admin {
+	rpc GetUsers(GetMessage) returns (MessageReply);
+	rpc PostUser(UserDTO) returns (MessageReply);
+	rpc ModifyUser(ModifyUserDTO) returns (MessageReply);
+	rpc DeleteUser(Id) returns (MessageReply);
+
+	rpc GetProfiles(GetMessage) returns (MessageReply);
+	rpc PostProfile(ProfileDTO) returns (MessageReply);
+	rpc ModifyProfile(ModifyProfileDTO) returns (MessageReply);
+	rpc DeleteProfile(Id) returns (MessageReply);
+
+	rpc DeleteImage(Id) returns (MessageReply);
+}
+
+message UserDTO {
+	string Username = 1;
+	string Password = 2;
+}
+
+message ModifyUserDTO {
+	string userId = 1;
+	UserDTO user = 2;
+}
+
+message ProfileDTO {
+	string profileUserId = 1;
+	repeated string habilidades = 2;
+	string descripcion = 3;
+}
+
+message ModifyProfileDTO {
+	string profileUserId = 1;
+	repeated string habilidades = 2;
+	string descripcion = 3;
+}
+
+
+message Id {
+	string username = 1;
+}
+
+message MessageReply {
+	string message = 1;
+}
+
+message GetMessage { }
